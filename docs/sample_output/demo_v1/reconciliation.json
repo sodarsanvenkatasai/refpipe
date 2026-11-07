@@ -1,0 +1,72 @@
+[
+  {
+    "check": "input = valid + rejected",
+    "expected": 48,
+    "actual": 48,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "outcomes persisted = input",
+    "expected": 48,
+    "actual": 48,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "rejects persisted = rejected",
+    "expected": 26,
+    "actual": 26,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "duplicates <= rejected",
+    "expected": true,
+    "actual": true,
+    "passed": true,
+    "note": "duplicate_count is a subset of rejected_count"
+  },
+  {
+    "check": "staged = valid",
+    "expected": 22,
+    "actual": 22,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "staged = inserted + updated + unchanged",
+    "expected": 22,
+    "actual": 22,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "every staged key is in target with same content",
+    "expected": 22,
+    "actual": 22,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "amount control total (cents), staged = target",
+    "expected": 4697743,
+    "actual": 4697743,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "target duplicate keys",
+    "expected": 0,
+    "actual": 0,
+    "passed": true,
+    "note": ""
+  },
+  {
+    "check": "rows written by this run use this reference_version",
+    "expected": 0,
+    "actual": 0,
+    "passed": true,
+    "note": ""
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "run_a": {
+    "run_id": "demo_v1",
+    "reference_version": "v1",
+    "status": "SUCCESS",
+    "input_count": 48,
+    "valid_count": 22,
+    "rejected_count": 26
+  },
+  "run_b": {
+    "run_id": "demo_v2",
+    "reference_version": "v2",
+    "status": "SUCCESS",
+    "input_count": 48,
+    "valid_count": 28,
+    "rejected_count": 20
+  },
+  "categories": {
+    "reason_changed": 1,
+    "rejected_now_valid": 6,
+    "unchanged_rejected": 13,
+    "unchanged_valid": 21,
+    "valid_now_deprecated": 1
+  },
+  "transitions": [
+    {
+      "from": "REJECTED:CODE_EXPIRED",
+      "to": "VALID:",
+      "records": 4
+    },
+    {
+      "from": "REJECTED:UNKNOWN_CODE",
+      "to": "VALID:",
+      "records": 2
+    },
+    {
+      "from": "VALID:",
+      "to": "VALID:",
+      "records": 1
+    },
+    {
+      "from": "REJECTED:UNKNOWN_CODE",
+      "to": "REJECTED:CODE_NOT_YET_EFFECTIVE",
+      "records": 1
+    }
+  ],
+  "changed_codes": {
+    "ACT0003": 1,
+    "ACT0004": 1,
+    "DEPN0003": 1,
+    "NEW0003": 1,
+    "NEW0004": 1,
+    "NEW0005": 1,
+    "OLD0001": 1,
+    "OLD0003": 1
+  }
+}

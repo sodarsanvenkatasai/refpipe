@@ -1,0 +1,119 @@
+{
+  "run_id": "demo_v1",
+  "status": "SUCCESS",
+  "source_file": "data/sample/incoming_records.csv",
+  "source_checksum": "6d240a1705d7fdadf9106186451880a04cfa9a2e63b23387bd98ebf0b9b7a2d7",
+  "reference_version": "v1",
+  "deprecated_policy": "allow_historical",
+  "engine": "vectorized",
+  "event_from": null,
+  "event_to": null,
+  "input_count": 48,
+  "valid_count": 22,
+  "rejected_count": 26,
+  "duplicate_count": 2,
+  "skipped_out_of_range": 0,
+  "inserted_count": 22,
+  "updated_count": 0,
+  "unchanged_count": 0,
+  "published_count": 22,
+  "rejects_by_reason": {
+    "CODE_EXPIRED": 8,
+    "CODE_NOT_YET_EFFECTIVE": 2,
+    "DUPLICATE_RECORD": 2,
+    "INACTIVE_CODE": 1,
+    "INVALID_AMOUNT": 1,
+    "INVALID_DATE": 1,
+    "MALFORMED_ROW": 2,
+    "MISSING_CODE": 1,
+    "MISSING_EVENT_DATE": 1,
+    "MISSING_RECORD_ID": 2,
+    "ORPHAN_ENTITY": 1,
+    "UNKNOWN_CODE": 4
+  },
+  "duration_seconds": 0.0448,
+  "stage_seconds": {
+    "load_reference": 0.0152,
+    "ingest": 0.0039,
+    "validate": 0.0135,
+    "transform": 0.006,
+    "stage": 0.0022,
+    "publish": 0.0023
+  },
+  "rows_per_second": 1071.4,
+  "warnings": [
+    "2 malformed row(s) (wrong field count) quarantined"
+  ],
+  "reconciliation": [
+    {
+      "check": "input = valid + rejected",
+      "expected": 48,
+      "actual": 48,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "outcomes persisted = input",
+      "expected": 48,
+      "actual": 48,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "rejects persisted = rejected",
+      "expected": 26,
+      "actual": 26,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "duplicates <= rejected",
+      "expected": true,
+      "actual": true,
+      "passed": true,
+      "note": "duplicate_count is a subset of rejected_count"
+    },
+    {
+      "check": "staged = valid",
+      "expected": 22,
+      "actual": 22,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "staged = inserted + updated + unchanged",
+      "expected": 22,
+      "actual": 22,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "every staged key is in target with same content",
+      "expected": 22,
+      "actual": 22,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "amount control total (cents), staged = target",
+      "expected": 4697743,
+      "actual": 4697743,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "target duplicate keys",
+      "expected": 0,
+      "actual": 0,
+      "passed": true,
+      "note": ""
+    },
+    {
+      "check": "rows written by this run use this reference_version",
+      "expected": 0,
+      "actual": 0,
+      "passed": true,
+      "note": ""
+    }
+  ]
+}
