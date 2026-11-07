@@ -1,0 +1,6 @@
+# Default run parameters. CLI flags override these; REFPIPE_* env vars override these.
+db_path = "output/pipeline.db"
+output_dir = "output"
+deprecated_policy = "allow_historical"   # allow_historical | reject
+strict_columns = false                   # true => unexpected extra columns fail the batch
+engine = "vectorized"                    # vectorized | rowwise (rowwise = slow baseline)
