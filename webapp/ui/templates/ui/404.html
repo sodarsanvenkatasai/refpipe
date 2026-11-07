@@ -1,0 +1,9 @@
+{% extends "ui/base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<section class="card hero-empty">
+  <h1>404 — not found</h1>
+  <p class="muted">That page, run or version doesn't exist.</p>
+  <div class="hero-actions"><a class="btn btn-primary" href="{% url 'ui:dashboard' %}">Back to dashboard</a></div>
+</section>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Compare runs{% endblock %}
+{% block crumbs %}<span>Pipeline</span><span class="crumb-sep">/</span><strong>Compare runs</strong>{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Compare two runs</h1>
+  <p class="muted">Typically the same input under two reference versions (v1 → v2).
+     Each record is represented by its first occurrence in the file.</p>
+</div>
+
+<section class="card">
+  <form method="get" class="filters">
+    <div class="field"><label for="{{ form.run_a.id_for_label }}">{{ form.run_a.label }}</label>{{ form.run_a }}</div>
+    <div class="compare-arrow" aria-hidden="true">→</div>
+    <div class="field"><label for="{{ form.run_b.id_for_label }}">{{ form.run_b.label }}</label>{{ form.run_b }}</div>
+    <button class="btn btn-primary" type="submit">Compare</button>
+  </form>
+  {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+  {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors }}</div>{% endif %}
+</section>
+
+{% if result %}
+<section class="grid-2">
+  <div class="card run-meta-card">
+    <div class="muted small">Run A · baseline</div>
+    <div class="mono"><a href="{% url 'ui:run_detail' result.run_a.run_id %}">{{ result.run_a.run_id }}</a></div>
+    <div><span class="chip mono">{{ result.run_a.reference_version }}</span> <span class="badge {{ result.run_a.status|status_class }}">{{ result.run_a.status }}</span></div>
+    <div class="muted small">{{ result.run_a.input_count|comma }} in · {{ result.run_a.valid_count|comma }} valid · {{ result.run_a.rejected_count|comma }} rejected</div>
+  </div>
+  <div class="card run-meta-card">
+    <div class="muted small">Run B · new</div>
+    <div class="mono"><a href="{% url 'ui:run_detail' result.run_b.run_id %}">{{ result.run_b.run_id }}</a></div>
+    <div><span class="chip mono">{{ result.run_b.reference_version }}</span> <span class="badge {{ result.run_b.status|status_class }}">{{ result.run_b.status }}</span></div>
+    <div class="muted small">{{ result.run_b.input_count|comma }} in · {{ result.run_b.valid_count|comma }} valid · {{ result.run_b.rejected_count|comma }} rejected</div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="card-title">What changed</h2>
+  <div class="cat-grid">
+    {% for cat, n in result.categories.items %}
+    <div class="cat cat-{{ cat }}">
+      <div class="cat-num">{{ n|comma }}</div>
+      <div class="cat-label">{{ cat|spaces }}</div>
+      <div class="muted small mono">{{ cat }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2 class="card-title">Transitions</h2>
+    <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>From (A)</th><th>To (B)</th><th class="num">Records</th></tr></thead>
+      <tbody>
+      {% for t in result.transitions %}
+        <tr><td class="mono small">{{ t.from }}</td><td class="mono small">{{ t.to }}</td><td class="num">{{ t.records|comma }}</td></tr>
+      {% empty %}<tr><td colspan="3" class="empty-cell">No changes.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <section class="card">
+    <h2 class="card-title">Product codes involved</h2>
+    <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Code</th><th class="num">Changed records</th></tr></thead>
+      <tbody>
+      {% for code, n in result.changed_codes.items %}
+        <tr><td class="mono">{{ code }}</td><td class="num">{{ n|comma }}</td></tr>
+      {% empty %}<tr><td colspan="2" class="empty-cell">No code changes.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <h2 class="card-title">Changed records <span class="muted small">first {{ result.changed_rows|length }} shown</span></h2>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Record id</th><th>Code</th><th>Run A</th><th>Run B</th></tr></thead>
+    <tbody>
+    {% for r in result.changed_rows %}
+      <tr>
+        <td class="mono">{{ r.record_id }}</td>
+        <td class="mono">{{ r.product_code|default:"—" }}</td>
+        <td>{% if r.a_outcome %}<span class="badge {{ r.a_outcome|status_class }}">{{ r.a_outcome }}</span> <span class="muted small">{{ r.a_reason|reason_label }}</span>{% if r.a_dep %} <span class="badge badge-amber">dep</span>{% endif %}{% else %}<span class="muted">absent</span>{% endif %}</td>
+        <td>{% if r.b_outcome %}<span class="badge {{ r.b_outcome|status_class }}">{{ r.b_outcome }}</span> <span class="muted small">{{ r.b_reason|reason_label }}</span>{% if r.b_dep %} <span class="badge badge-amber">dep</span>{% endif %}{% else %}<span class="muted">absent</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="4" class="empty-cell">No record-level differences.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

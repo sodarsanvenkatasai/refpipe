@@ -1,0 +1,1 @@
+"""UI app: a thin Django layer over the ``src`` pipeline package."""

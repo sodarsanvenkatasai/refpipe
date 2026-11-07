@@ -1,0 +1,43 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Reference {{ meta.reference_version }}{% endblock %}
+{% block crumbs %}<a href="{% url 'ui:reference_list' %}">Versions</a><span class="crumb-sep">/</span><strong class="mono">{{ meta.reference_version }}</strong>{% endblock %}
+{% block actions %}<a class="btn btn-ghost" href="{% url 'ui:reference_download' meta.reference_version %}">Download CSV</a> <a class="btn btn-primary" href="{% url 'ui:run_new' %}">+ Run against this</a>{% endblock %}
+{% block content %}
+<section class="kpi-grid">
+  <div class="card kpi"><div class="kpi-label">Version</div><div class="kpi-value mono">{{ meta.reference_version }}</div><div class="kpi-sub">loaded {{ meta.loaded_at|dt }}</div></div>
+  <div class="card kpi"><div class="kpi-label">Reference codes</div><div class="kpi-value">{{ meta.row_count|comma }}</div><div class="kpi-sub">windows, inclusive bounds</div></div>
+  <div class="card kpi"><div class="kpi-label">Checksum</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.checksum }}">{{ meta.checksum|truncatechars:18 }}</div><div class="kpi-sub">immutable snapshot</div></div>
+  <div class="card kpi"><div class="kpi-label">Source</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.source_file }}">{{ meta.source_file|truncatechars:24 }}</div><div class="kpi-sub">blank effective_to = open-ended</div></div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2 class="card-title">Codes in this version</h2></div>
+  <form method="get" class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search code or description…" class="input">
+    <select name="status" class="input">
+      <option value="">All statuses</option>
+      {% for s in statuses %}<option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-ghost" type="submit">Filter</button>
+    {% if q or status %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:reference_detail' meta.reference_version %}">Clear</a>{% endif %}
+  </form>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Code</th><th>Description</th><th>Status</th><th>Effective from</th><th>Effective to</th></tr></thead>
+    <tbody>
+    {% for c in page_obj.rows %}
+      <tr>
+        <td class="mono"><strong>{{ c.product_code }}</strong></td>
+        <td>{{ c.description|default:"—" }}</td>
+        <td><span class="badge {{ c.code_status|status_class }}">{{ c.code_status }}</span></td>
+        <td class="mono">{{ c.effective_from }}</td>
+        <td class="mono">{% if c.effective_to == '9999-12-31' %}<span class="muted">open-ended</span>{% else %}{{ c.effective_to }}{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="empty-cell">No codes match.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% include "ui/partials/pagination.html" %}
+</section>
+{% endblock %}

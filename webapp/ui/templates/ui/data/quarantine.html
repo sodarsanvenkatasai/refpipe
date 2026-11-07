@@ -1,0 +1,36 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Quarantine{% endblock %}
+{% block crumbs %}<span>Data</span><span class="crumb-sep">/</span><strong>Quarantine</strong>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h1 class="card-title">Rejected records <span class="muted small">{{ page_obj.total|comma }} rows · append-only · raw payload preserved</span></h1>
+  </div>
+  <form method="get" class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record id, payload or run…" class="input">
+    <input type="search" name="run_id" value="{{ run_id }}" placeholder="Run id" class="input input-sm">
+    <button class="btn btn-ghost" type="submit">Filter</button>
+    {% if q or reason or run_id %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:quarantine' %}">Clear</a>{% endif %}
+  </form>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Record id</th><th>Reason</th><th>Run</th><th>Version</th><th class="num">Row</th><th>Rejected at</th><th>Raw payload</th></tr></thead>
+    <tbody>
+    {% for r in page_obj.rows %}
+      <tr>
+        <td class="mono">{{ r.source_record_id }}</td>
+        <td><span class="badge {{ r.rejection_reason|reason_class }}">{{ r.rejection_reason|reason_label }}</span></td>
+        <td><a class="mono small" href="{% url 'ui:run_detail' r.run_id %}">{{ r.run_id|truncatechars:24 }}</a></td>
+        <td><span class="chip mono">{{ r.reference_version }}</span></td>
+        <td class="num muted">{{ r.row_num }}</td>
+        <td class="muted small">{{ r.rejected_at|dt }}</td>
+        <td><details class="payload"><summary>view</summary><pre class="code-block">{{ r.raw_payload|pretty_json }}</pre></details></td>
+      </tr>
+    {% empty %}<tr><td colspan="7" class="empty-cell">Nothing in quarantine.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% include "ui/partials/pagination.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Dashboard{% endblock %}
+{% block crumbs %}<span>Overview</span><span class="crumb-sep">/</span><strong>Dashboard</strong>{% endblock %}
+{% block actions %}
+<form method="post" action="{% url 'ui:run_sample' %}" class="inline-form">{% csrf_token %}
+  <button class="btn btn-ghost" type="submit">Try the sample</button>
+</form>
+<a class="btn btn-primary" href="{% url 'ui:run_new' %}">+ New run</a>
+{% endblock %}
+
+{% block content %}
+{% if data.totals.runs == 0 %}
+<section class="hero-empty card">
+  <div class="hero-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="44" height="44"><path d="M4 6h16M4 12h10M4 18h13" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+  </div>
+  <h1>Welcome to your validation console</h1>
+  <p>Validate incoming CSV records against versioned reference codes — with quarantine,
+     reconciliation and idempotent reruns. Everything runs locally on SQLite.</p>
+  <div class="hero-actions">
+    <form method="post" action="{% url 'ui:run_sample' %}">{% csrf_token %}
+      <button class="btn btn-primary btn-lg" type="submit">Run the 48-row sample</button>
+    </form>
+    <a class="btn btn-ghost btn-lg" href="{% url 'ui:run_new' %}">Upload your own CSV</a>
+  </div>
+  <p class="muted small">The sample covers every rejection category and loads its own reference snapshot (<code>sample_v1</code>).</p>
+</section>
+{% else %}
+<section class="kpi-grid">
+  <div class="card kpi">
+    <div class="kpi-label">Pipeline runs</div>
+    <div class="kpi-value">{{ data.totals.runs|comma }}</div>
+    <div class="kpi-sub"><span class="dot dot-green"></span>{{ data.totals.success|default:0 }} success
+      <span class="dot dot-red"></span>{{ data.totals.failed|default:0 }} failed
+      {% if data.totals.running %}<span class="dot dot-amber"></span>{{ data.totals.running }} running{% endif %}</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">Validated records (target)</div>
+    <div class="kpi-value">{{ data.totals.validated_records|comma }}</div>
+    <div class="kpi-sub">current state · one row per record_id</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">Quarantined rejects</div>
+    <div class="kpi-value">{{ data.totals.quarantined|comma }}</div>
+    <div class="kpi-sub">append-only · raw payload kept</div>
+  </div>
+  <div class="card kpi">
+    <div class="kpi-label">Reference versions</div>
+    <div class="kpi-value">{{ data.totals.versions|comma }}</div>
+    <div class="kpi-sub">{{ data.totals.entities|comma }} entity ids loaded</div>
+  </div>
+</section>
+
+<section class="grid-3">
+  <div class="card chart-card">
+    <h2 class="card-title">Outcome share <span class="muted small">all runs</span></h2>
+    <div class="donut-row">
+      {% donut_svg data.totals.valid_rows data.totals.rejected_rows %}
+      <ul class="legend">
+        <li><span class="dot dot-green"></span>Valid <strong>{{ data.totals.valid_rows|comma }}</strong></li>
+        <li><span class="dot dot-red"></span>Rejected <strong>{{ data.totals.rejected_rows|comma }}</strong></li>
+        <li class="muted small">{{ data.totals.input_rows|comma }} rows processed</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card chart-card">
+    <h2 class="card-title">Recent throughput <span class="muted small">last {{ data.trend|length }} runs</span></h2>
+    {% if data.trend %}
+    <div class="bars" role="img" aria-label="Valid and rejected rows per recent run">
+      {% for t in data.trend %}
+      <a class="bar-col" href="{% url 'ui:run_detail' t.run_id %}" title="{{ t.run_id }} · {{ t.reference_version }}: {{ t.valid_count }} valid / {{ t.rejected_count }} rejected">
+        <div class="bar-stack" style="height: {{ t.height_pct }}%">
+          <div class="bar-valid" style="flex-grow: {{ t.valid_count|default:0 }}"></div>
+          <div class="bar-rejected" style="flex-grow: {{ t.rejected_count|default:0 }}"></div>
+        </div>
+        <div class="bar-cap mono">{{ t.reference_version }}</div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="legend legend-inline"><span><span class="dot dot-green"></span>valid</span><span><span class="dot dot-red"></span>rejected</span></div>
+    {% else %}<p class="muted">No completed runs yet.</p>{% endif %}
+  </div>
+  <div class="card chart-card">
+    <h2 class="card-title">Rejection reasons <span class="muted small">quarantine</span></h2>
+    {% if data.reasons %}
+    <ul class="hbars">
+      {% for r in data.reasons %}
+      <li>
+        <div class="hbar-head"><span class="badge {{ r.reason|reason_class }}">{{ r.reason|reason_label }}</span><span class="mono">{{ r.n|comma }}</span></div>
+        <div class="hbar-track"><div class="hbar-fill" style="width: {{ r.pct }}%"></div></div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">Nothing quarantined yet.</p>{% endif %}
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2 class="card-title">Recent runs</h2>
+    <a class="btn btn-sm btn-ghost" href="{% url 'ui:run_list' %}">View all &rarr;</a>
+  </div>
+  {% include "ui/partials/run_table.html" with runs=data.recent %}
+</section>
+{% endif %}
+{% endblock %}

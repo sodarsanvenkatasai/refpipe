@@ -1,0 +1,41 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Validated records{% endblock %}
+{% block crumbs %}<span>Data</span><span class="crumb-sep">/</span><strong>Validated records</strong>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h1 class="card-title">Target table <span class="muted small">{{ page_obj.total|comma }} records · current state · idempotent upsert on record_id</span></h1>
+  </div>
+  <form method="get" class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record / code / entity…" class="input">
+    <select name="version" class="input">
+      <option value="">All versions</option>
+      {% for v, label in versions %}<option value="{{ v }}" {% if v == version %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <label class="check check-inline"><input type="checkbox" name="deprecated" value="1" {% if deprecated_only %}checked{% endif %}> deprecated-code rows only</label>
+    <button class="btn btn-ghost" type="submit">Filter</button>
+    {% if q or version or deprecated_only %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:validated' %}">Clear</a>{% endif %}
+  </form>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Record id</th><th>Entity</th><th>Code</th><th>Event date</th><th class="num">Amount</th><th>Version</th><th>Flags</th><th>Published</th></tr></thead>
+    <tbody>
+    {% for r in page_obj.rows %}
+      <tr>
+        <td class="mono"><strong>{{ r.record_id }}</strong></td>
+        <td class="mono">{{ r.entity_id|default:"—" }}</td>
+        <td class="mono">{{ r.product_code }}</td>
+        <td class="mono">{{ r.event_date }}</td>
+        <td class="num mono">{{ r.amount|default:"—" }}</td>
+        <td><span class="chip mono">{{ r.reference_version }}</span></td>
+        <td>{% if r.is_deprecated_code %}<span class="badge badge-amber">deprecated</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td class="muted small">{{ r.published_at|dt }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="8" class="empty-cell">No validated records yet — start a run to publish rows here.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% include "ui/partials/pagination.html" %}
+</section>
+{% endblock %}

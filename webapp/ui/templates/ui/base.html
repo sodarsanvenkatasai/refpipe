@@ -1,0 +1,74 @@
+{% load static ui_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}RefPipe UI{% endblock %} · Reference-Code Pipeline</title>
+  <link rel="stylesheet" href="{% static 'ui/css/app.css' %}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Cpath d='M8 11h16M8 16h10M8 21h13' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{% url 'ui:dashboard' %}">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path d="M8 11h16M8 16h10M8 21h13" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+      </span>
+      <span class="brand-text">RefPipe<span class="brand-sub">validation console</span></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <div class="nav-group">Overview</div>
+      <a class="nav-link {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'ui:dashboard' %}">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/></svg>Dashboard</a>
+      <div class="nav-group">Pipeline</div>
+      <a class="nav-link {% if nav == 'new_run' %}active{% endif %}" href="{% url 'ui:run_new' %}">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New run</a>
+      <a class="nav-link {% if nav == 'runs' %}active{% endif %}" href="{% url 'ui:run_list' %}">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Runs</a>
+      <a class="nav-link {% if nav == 'compare' %}active{% endif %}" href="{% url 'ui:compare' %}">
+        <svg viewBox="0 0 24 24"><path d="M9 3v18M15 3v18M3 8h6M15 16h6"/></svg>Compare runs</a>
+      <div class="nav-group">Reference data</div>
+      <a class="nav-link {% if nav == 'reference' %}active{% endif %}" href="{% url 'ui:reference_list' %}">
+        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5zM8 8h8M8 12h6"/></svg>Versions</a>
+      <a class="nav-link {% if nav == 'entities' %}active{% endif %}" href="{% url 'ui:entities' %}">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M16 8.5a2.8 2.8 0 1 0 0-1M17.5 15c1.9.5 3.1 2 3.5 4.5"/></svg>Entities</a>
+      <div class="nav-group">Data</div>
+      <a class="nav-link {% if nav == 'validated' %}active{% endif %}" href="{% url 'ui:validated' %}">
+        <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Validated records</a>
+      <a class="nav-link {% if nav == 'quarantine' %}active{% endif %}" href="{% url 'ui:quarantine' %}">
+        <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.6v.2"/></svg>Quarantine</a>
+    </nav>
+    <div class="sidebar-foot">Local · SQLite · no network<br>Same engine as <code>src.cli</code></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Toggle navigation">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="crumbs">{% block crumbs %}<span>Reference-Code Pipeline</span>{% endblock %}</div>
+      <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+    </header>
+
+    {% if messages %}
+    <div class="messages" role="status">
+      {% for message in messages %}
+      <div class="flash flash-{{ message.tags|default:'info' }}">
+        <span>{{ message }}</span>
+        <button class="flash-close" aria-label="Dismiss">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="foot">Reference-Code Validation Pipeline · web console · outputs in <code>output/</code></footer>
+  </div>
+</div>
+<script src="{% static 'ui/js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,27 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Runs{% endblock %}
+{% block crumbs %}<span>Pipeline</span><span class="crumb-sep">/</span><strong>Runs</strong>{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{% url 'ui:run_new' %}">+ New run</a>{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h1 class="card-title">Run history <span class="muted small">{{ page_obj.total }} total</span></h1>
+  </div>
+  <form method="get" class="filters">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search run id or source file…" class="input">
+    <select name="status" class="input">
+      <option value="">All statuses</option>
+      {% for s in statuses %}<option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <select name="version" class="input">
+      <option value="">All versions</option>
+      {% for v, label in versions %}<option value="{{ v }}" {% if v == version %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-ghost" type="submit">Filter</button>
+    {% if q or status or version %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:run_list' %}">Clear</a>{% endif %}
+  </form>
+  {% include "ui/partials/run_table.html" with runs=page_obj.rows %}
+  {% include "ui/partials/pagination.html" %}
+</section>
+{% endblock %}

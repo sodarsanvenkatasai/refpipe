@@ -1,0 +1,65 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}New run{% endblock %}
+{% block crumbs %}<span>Pipeline</span><span class="crumb-sep">/</span><strong>New run</strong>{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Start a validation run</h1>
+  <p class="muted">Upload incoming records and choose exactly one reference version.
+     The run is processed in the background — you can watch it live on the run page.</p>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="run-form" id="runForm" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="flash flash-error">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="form-grid">
+    <section class="card form-card">
+      <h2 class="card-title"><span class="step">1</span> Input data</h2>
+      {% include "ui/partials/field.html" with field=form.input_file %}
+      <div class="field-row">
+        {% include "ui/partials/field.html" with field=form.entities_file %}
+        <div class="field field-check">
+          <label class="check">{{ form.check_entities }} <span>Check entities (already loaded)</span></label>
+          {% if form.check_entities.errors %}<div class="field-errors">{{ form.check_entities.errors }}</div>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card form-card">
+      <h2 class="card-title"><span class="step">2</span> Reference version</h2>
+      {% include "ui/partials/field.html" with field=form.reference_version %}
+      <div class="divider-label">or load a new immutable snapshot</div>
+      <div class="field-row">
+        {% include "ui/partials/field.html" with field=form.new_reference_version %}
+        {% include "ui/partials/field.html" with field=form.new_reference_file %}
+      </div>
+    </section>
+
+    <section class="card form-card">
+      <h2 class="card-title"><span class="step">3</span> Options</h2>
+      {% include "ui/partials/field.html" with field=form.deprecated_policy %}
+      <div class="field field-check">
+        <label class="check">{{ form.strict_columns }} <span>Strict columns</span></label>
+        <div class="help">Unexpected extra columns fail the whole batch (default: warn and ignore).</div>
+      </div>
+      <div class="field-row">
+        {% include "ui/partials/field.html" with field=form.event_from %}
+        {% include "ui/partials/field.html" with field=form.event_to %}
+      </div>
+      {% include "ui/partials/field.html" with field=form.run_id %}
+    </section>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary btn-lg" type="submit" id="runSubmit">
+      <span class="btn-label">Validate &amp; publish</span>
+      <span class="spinner" hidden></span>
+    </button>
+    <a class="btn btn-ghost btn-lg" href="{% url 'ui:dashboard' %}">Cancel</a>
+    <span class="muted small">Accounting invariant: input = valid + rejected · publish is one transaction.</span>
+  </div>
+</form>
+{% endblock %}

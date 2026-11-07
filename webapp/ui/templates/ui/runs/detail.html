@@ -1,0 +1,186 @@
+{% extends "ui/base.html" %}
+{% load ui_extras %}
+{% block title %}Run {{ run.run_id }}{% endblock %}
+{% block crumbs %}<a href="{% url 'ui:run_list' %}">Runs</a><span class="crumb-sep">/</span><strong class="mono">{{ run.run_id }}</strong>{% endblock %}
+{% block actions %}
+{% if run.status == 'SUCCESS' %}
+<a class="btn btn-sm btn-ghost" href="{% url 'ui:run_download' run.run_id 'run_summary.json' %}">Summary JSON</a>
+<a class="btn btn-sm btn-ghost" href="{% url 'ui:run_download' run.run_id 'reconciliation.json' %}">Reconciliation</a>
+<a class="btn btn-sm btn-ghost" href="{% url 'ui:run_download' run.run_id 'rejects.csv' %}">Rejects CSV</a>
+{% endif %}
+<a class="btn btn-sm btn-primary" href="{% url 'ui:compare' %}">Compare</a>
+{% endblock %}
+
+{% block content %}
+{% if run.status == 'RUNNING' or run.status == 'STARTING' %}
+<section class="card running-card" data-poll="{% url 'ui:run_status' run.run_id %}">
+  <div class="spinner spinner-lg" aria-hidden="true"></div>
+  <div>
+    <h1 class="running-title">Run in progress…</h1>
+    <p class="muted">Ingest → validate → transform → stage → publish → reconcile.
+       This page refreshes automatically when the run finishes.</p>
+  </div>
+</section>
+{% else %}
+
+<div class="run-banner {% if run.status == 'SUCCESS' %}banner-ok{% else %}banner-bad{% endif %}">
+  <div class="banner-icon" aria-hidden="true">{% if run.status == 'SUCCESS' %}✓{% else %}✕{% endif %}</div>
+  <div class="banner-body">
+    <h1>Run {{ run.status|lower }}</h1>
+    <div class="banner-meta mono">{{ run.run_id }} · reference {{ run.reference_version }} · {{ run.started_at|dt }}</div>
+    {% if run.error_message %}<div class="banner-error">{{ run.error_message }}</div>{% endif %}
+  </div>
+  {% if run.status == 'SUCCESS' %}
+  <div class="banner-stat"><div class="banner-num">{{ run.duration_seconds|secs }}</div><div class="muted small">{{ summary.rows_per_second|default:"—" }} rows/s</div></div>
+  {% endif %}
+</div>
+
+{% if run.status == 'SUCCESS' %}
+<section class="kpi-grid kpi-grid-6">
+  <div class="card kpi kpi-sm"><div class="kpi-label">Input</div><div class="kpi-value">{{ run.input_count|comma }}</div></div>
+  <div class="card kpi kpi-sm"><div class="kpi-label">Valid</div><div class="kpi-value ok">{{ run.valid_count|comma }}</div></div>
+  <div class="card kpi kpi-sm"><div class="kpi-label">Rejected</div><div class="kpi-value bad">{{ run.rejected_count|comma }}</div></div>
+  <div class="card kpi kpi-sm"><div class="kpi-label">Duplicates</div><div class="kpi-value">{{ run.duplicate_count|comma }}</div><div class="kpi-sub">subset of rejected</div></div>
+  <div class="card kpi kpi-sm"><div class="kpi-label">Published</div><div class="kpi-value">{{ run.published_count|comma }}</div><div class="kpi-sub">{{ run.inserted_count|comma }} new · {{ run.updated_count|comma }} upd · {{ run.unchanged_count|comma }} same</div></div>
+  <div class="card kpi kpi-sm"><div class="kpi-label">Skipped</div><div class="kpi-value">{{ run.skipped_out_of_range|comma }}</div><div class="kpi-sub">out of event range</div></div>
+</section>
+{% endif %}
+
+<nav class="tabs" aria-label="Run sections">
+  <a class="tab {% if tab == 'overview' %}active{% endif %}" href="{% querystring tab='overview' page=1 %}">Overview</a>
+  <a class="tab {% if tab == 'rejects' %}active{% endif %}" href="{% querystring tab='rejects' page=1 %}">Rejects {% if run.rejected_count %}<span class="tab-count">{{ run.rejected_count }}</span>{% endif %}</a>
+  <a class="tab {% if tab == 'outcomes' %}active{% endif %}" href="{% querystring tab='outcomes' page=1 %}">Row outcomes</a>
+  <a class="tab {% if tab == 'reconciliation' %}active{% endif %}" href="{% querystring tab='reconciliation' page=1 %}">Reconciliation {% if checks %}<span class="tab-count tab-count-ok">{{ checks|length }}</span>{% endif %}</a>
+</nav>
+
+{% if tab == 'overview' %}
+<div class="grid-2">
+  <section class="card">
+    <h2 class="card-title">Rejects by reason</h2>
+    {% if reasons %}
+    <ul class="hbars">
+      {% for r in reasons %}
+      <li>
+        <div class="hbar-head">
+          <a class="badge {{ r.reason|reason_class }}" href="{% querystring tab='rejects' reason=r.reason page=1 %}">{{ r.reason|reason_label }}</a>
+          <span class="mono">{{ r.count|comma }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="muted">No rejects in this run.</p>{% endif %}
+    {% if warnings %}
+    <h3 class="subhead">Warnings</h3>
+    <ul class="warn-list">{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  <section class="card">
+    <h2 class="card-title">Run details</h2>
+    <dl class="meta">
+      <dt>Source file</dt><dd class="mono" title="{{ run.source_file }}">{{ run.source_file }}</dd>
+      <dt>Checksum</dt><dd class="mono small">{{ run.source_checksum|default:"—" }}</dd>
+      <dt>Reference version</dt><dd><a class="chip mono" href="{% url 'ui:reference_detail' run.reference_version %}">{{ run.reference_version }}</a></dd>
+      <dt>Started</dt><dd>{{ run.started_at|dt }}</dd>
+      <dt>Ended</dt><dd>{{ run.ended_at|dt }}</dd>
+      {% if summary.stage_seconds %}
+      <dt>Stage timing</dt>
+      <dd><div class="stage-grid">{% for stage, t in summary.stage_seconds.items %}<span class="stage"><span class="muted">{{ stage }}</span> <strong>{{ t|secs }}</strong></span>{% endfor %}</div></dd>
+      {% endif %}
+    </dl>
+    {% if config %}
+    <details class="config-details"><summary>Run configuration</summary><pre class="code-block">{{ config|pretty_json }}</pre></details>
+    {% endif %}
+  </section>
+</div>
+
+{% elif tab == 'rejects' %}
+<section class="card">
+  <div class="card-head"><h2 class="card-title">Quarantined rows <span class="muted small">raw payload preserved</span></h2></div>
+  <form method="get" class="filters">
+    <input type="hidden" name="tab" value="rejects">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record id or payload…" class="input">
+    <select name="reason" class="input">
+      <option value="">All reasons</option>
+      {% for rc in reason_choices %}<option value="{{ rc }}" {% if rc == reason %}selected{% endif %}>{{ rc|reason_label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-ghost" type="submit">Filter</button>
+    {% if q or reason %}<a class="btn btn-sm btn-ghost" href="{% querystring q='' reason='' page=1 %}">Clear</a>{% endif %}
+  </form>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th class="num">Row</th><th>Record id</th><th>Reason</th><th>Version</th><th>Raw payload</th></tr></thead>
+    <tbody>
+    {% for r in rejects.rows %}
+      <tr>
+        <td class="num muted">{{ r.row_num }}</td>
+        <td class="mono">{{ r.source_record_id }}</td>
+        <td><span class="badge {{ r.rejection_reason|reason_class }}">{{ r.rejection_reason|reason_label }}</span></td>
+        <td><span class="chip mono">{{ r.reference_version }}</span></td>
+        <td><details class="payload"><summary>view</summary><pre class="code-block">{{ r.raw_payload|pretty_json }}</pre></details></td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="empty-cell">No rejected rows match.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% include "ui/partials/pagination.html" with page_obj=rejects %}
+</section>
+
+{% elif tab == 'outcomes' %}
+<section class="card">
+  <div class="card-head"><h2 class="card-title">Every processed row <span class="muted small">first failure wins</span></h2></div>
+  <form method="get" class="filters">
+    <input type="hidden" name="tab" value="outcomes">
+    <select name="outcome" class="input">
+      <option value="">All outcomes</option>
+      <option value="VALID" {% if outcome == 'VALID' %}selected{% endif %}>Valid</option>
+      <option value="REJECTED" {% if outcome == 'REJECTED' %}selected{% endif %}>Rejected</option>
+    </select>
+    <button class="btn btn-ghost" type="submit">Filter</button>
+  </form>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th class="num">Row</th><th>Record id</th><th>Code</th><th>Outcome</th><th>Reason</th><th>Deprecated flag</th></tr></thead>
+    <tbody>
+    {% for r in outcomes.rows %}
+      <tr>
+        <td class="num muted">{{ r.row_num }}</td>
+        <td class="mono">{{ r.record_id }}</td>
+        <td class="mono">{{ r.product_code|default:"—" }}</td>
+        <td><span class="badge {{ r.outcome|status_class }}">{{ r.outcome }}</span></td>
+        <td>{% if r.reason %}<span class="badge {{ r.reason|reason_class }}">{{ r.reason|reason_label }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{% if r.is_deprecated_code %}<span class="badge badge-amber">deprecated window</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="empty-cell">No outcomes recorded.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% include "ui/partials/pagination.html" with page_obj=outcomes %}
+</section>
+
+{% elif tab == 'reconciliation' %}
+<section class="card">
+  <div class="card-head"><h2 class="card-title">Reconciliation checks <span class="muted small">ran inside the publish transaction</span></h2></div>
+  {% if checks %}
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Check</th><th>Expected</th><th>Actual</th><th>Result</th><th>Note</th></tr></thead>
+    <tbody>
+    {% for c in checks %}
+      <tr>
+        <td>{{ c.check }}</td>
+        <td class="mono">{{ c.expected }}</td>
+        <td class="mono">{{ c.actual }}</td>
+        <td>{% if c.passed %}<span class="badge badge-green">PASS</span>{% else %}<span class="badge badge-red">FAIL</span>{% endif %}</td>
+        <td class="muted small">{{ c.note|default:"" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted empty-cell">No reconciliation report — the run failed before the publish transaction committed. The target table was left untouched; retry is safe.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
