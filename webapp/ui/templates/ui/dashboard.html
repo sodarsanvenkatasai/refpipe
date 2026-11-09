@@ -143,9 +143,9 @@
     {% if data.reasons %}
     <ul class="hbars">
       {% for r in data.reasons %}
-      <li>
-        <div class="hbar-head"><span class="badge {{ r.reason|reason_class }}">{{ r.reason|reason_label }}</span><span class="mono">{{ r.n|comma }}</span></div>
-        <div class="hbar-track"><div class="hbar-fill" style="width: {{ r.pct }}%"></div></div>
+      <li class="hbar-tone-{{ r.reason|reason_tone }}">
+        <div class="hbar-head"><span class="badge {{ r.reason|reason_class }}">{{ r.reason|reason_label }}</span><span class="mono hbar-val">{{ r.n|comma }}<em>{{ r.share }}%</em></span></div>
+        <div class="hbar-track" title="{{ r.n|comma }} quarantined rows · {{ r.share }}% of all rejects"><div class="hbar-fill" style="width: {{ r.pct }}%"></div></div>
       </li>
       {% endfor %}
     </ul>

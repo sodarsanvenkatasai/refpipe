@@ -338,3 +338,113 @@ class BrowserTests(WebUITestCase):
         self.assertEqual(filtered.status_code, 200)
         runs = self.client.get(reverse("ui:run_list") + "?status=SUCCESS")
         self.assertContains(runs, run_id)
+
+
+class RerunSafetyTests(WebUITestCase):
+    def test_rerun_endpoint_reuses_input_and_publishes_nothing(self):
+        first = self.wait_run(self.start_sample_run())
+        before = services.validated_records()["total"]
+        response = self.client.post(reverse("ui:run_rerun", args=[first["run_id"]]))
+        second = self.wait_run(self.run_id_from_redirect(response))
+        self.assertNotEqual(second["run_id"], first["run_id"])
+        self.assertEqual(second["status"], "SUCCESS")
+        self.assertEqual(second["source_file"], first["source_file"])
+        self.assertEqual(second["reference_version"], first["reference_version"])
+        for key in ("input_count", "valid_count", "rejected_count", "duplicate_count"):
+            self.assertEqual(second[key], first[key])
+        self.assertEqual(second["published_count"], 0)
+        self.assertEqual(second["unchanged_count"], first["valid_count"])
+        self.assertEqual(services.validated_records()["total"], before)
+
+    def test_rerun_of_failed_run_records_error_again(self):
+        bad = SimpleUploadedFile("bad.csv", b"foo,bar\n1,2\n", content_type="text/csv")
+        response = self.client.post(reverse("ui:run_new"), {
+            "input_file": bad,
+            "new_reference_version": "v1",
+            "new_reference_file": upload(self.sample / "reference_codes_v1.csv"),
+            "deprecated_policy": "allow_historical",
+            "run_id": "badrun",
+        })
+        failed = self.wait_run(self.run_id_from_redirect(response))
+        self.assertEqual(failed["status"], "FAILED")
+        rerun = self.client.post(reverse("ui:run_rerun", args=["badrun"]))
+        again = self.wait_run(self.run_id_from_redirect(rerun))
+        self.assertEqual(again["status"], "FAILED")
+        self.assertIn("SCHEMA_MISMATCH", again["error_message"])
+        detail = self.client.get(reverse("ui:run_detail", args=[again["run_id"]]))
+        self.assertContains(detail, "SCHEMA_MISMATCH")
+        self.assertContains(detail, "banner-error")
+        self.assertContains(detail, "Rerun safely")
+        listing = self.client.get(reverse("ui:run_list"))
+        self.assertContains(listing, "cell-error")
+
+    def test_rerun_missing_source_does_not_create_run(self):
+        run_id = self.start_sample_run()
+        with services.pipeline_conn() as conn:
+            conn.execute("UPDATE pipeline_runs SET source_file=? WHERE run_id=?",
+                         ("/nonexistent/gone.csv", run_id))
+            conn.commit()
+            count = conn.execute("SELECT COUNT(*) FROM pipeline_runs").fetchone()[0]
+        response = self.client.post(reverse("ui:run_rerun", args=[run_id]))
+        self.assertRedirects(response, reverse("ui:run_detail", args=[run_id]),
+                             fetch_redirect_response=False)
+        with services.pipeline_conn() as conn:
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM pipeline_runs").fetchone()[0], count)
+        page = self.client.get(reverse("ui:run_detail", args=[run_id]))
+        self.assertContains(page, "no longer on disk")
+
+    def test_rerun_requires_post_and_known_run(self):
+        run_id = self.start_sample_run()
+        self.assertEqual(self.client.get(reverse("ui:run_rerun", args=[run_id])).status_code, 405)
+        self.assertEqual(self.client.post(reverse("ui:run_rerun", args=["nope"])).status_code, 404)
+
+    def test_stale_running_rows_recovered_as_failed(self):
+        with services.pipeline_conn() as conn:
+            conn.execute(
+                "INSERT INTO pipeline_runs(run_id, started_at, status, source_file, reference_version)"
+                " VALUES ('stuck', '2026-01-01T00:00:00+00:00', 'RUNNING', 'x.csv', 'v1')")
+            conn.commit()
+        self.assertEqual(services.recover_stale_runs(), ["stuck"])
+        run = services.get_run("stuck")
+        self.assertEqual(run["status"], "FAILED")
+        self.assertTrue(run["error_message"].startswith("RECOVERED:"))
+        self.assertTrue(run["ended_at"])
+
+
+class QuickViewTests(WebUITestCase):
+    def test_status_json_carries_drawer_summary(self):
+        run_id = self.start_sample_run()
+        data = self.client.get(reverse("ui:run_status", args=[run_id])).json()
+        self.assertEqual(data["status"], "SUCCESS")
+        self.assertEqual(data["input_count"], 48)
+        self.assertEqual(data["valid_count"], 22)
+        self.assertEqual(data["published_count"], 22)
+        self.assertEqual(data["reference_version"], "sample_v1")
+        self.assertIsNone(data["error_message"])
+        self.assertTrue(data["source_file"].endswith("incoming_records.csv"))
+
+    def test_registry_offers_quick_view_and_rerun(self):
+        run_id = self.start_sample_run()
+        page = self.client.get(reverse("ui:run_list"))
+        self.assertContains(page, f'data-peek="{run_id}"')
+        self.assertContains(page, 'id="peek"')
+        self.assertContains(page, 'id="peekRerun"')
+        self.assertContains(page, "Rerun safely")
+
+    def test_failed_run_error_reaches_registry_drawer(self):
+        bad = SimpleUploadedFile("bad.csv", b"foo,bar\n1,2\n", content_type="text/csv")
+        response = self.client.post(reverse("ui:run_new"), {
+            "input_file": bad,
+            "new_reference_version": "v1",
+            "new_reference_file": upload(self.sample / "reference_codes_v1.csv"),
+            "deprecated_policy": "allow_historical",
+            "run_id": "peekbad",
+        })
+        run_id = self.run_id_from_redirect(response)
+        self.wait_run(run_id)
+        page = self.client.get(reverse("ui:run_list"))
+        self.assertContains(page, "cell-error")
+        self.assertContains(page, f'data-peek="{run_id}"')
+        data = self.client.get(reverse("ui:run_status", args=[run_id])).json()
+        self.assertEqual(data["status"], "FAILED")
+        self.assertIn("SCHEMA_MISMATCH", data["error_message"])

@@ -246,4 +246,110 @@
         .catch(function () { setTimeout(tick, 2000); });
     })();
   });
+
+  // Run quick-view drawer: full error, accounting and rerun without leaving the list.
+  var peek = document.getElementById("peek");
+  var peekScrim = document.getElementById("peekScrim");
+  var peekBody = document.getElementById("peekBody");
+  var peekFoot = document.getElementById("peekFoot");
+  var peekTitle = document.getElementById("peekTitle");
+  var peekOpen = document.getElementById("peekOpen");
+  var peekRerun = document.getElementById("peekRerun");
+  var peekClose = document.getElementById("peekClose");
+  var peekTimer = null;
+  var peekTrigger = null;
+  var peekHref = "";
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function fmt(n) { return n == null ? "—" : Number(n).toLocaleString("en-US"); }
+  function secs(n) { return n == null ? "—" : Number(n).toFixed(2) + " s"; }
+  function fmtDt(s) {
+    if (!s) return "—";
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? String(s) : d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  }
+  function badgeClass(status) {
+    return { SUCCESS: "badge-green", FAILED: "badge-red", RUNNING: "badge-amber", STARTING: "badge-amber" }[status] || "badge-gray";
+  }
+
+  function setPeek(open) {
+    peek.classList.toggle("open", open);
+    peekScrim.classList.toggle("open", open);
+    peek.setAttribute("aria-hidden", open ? "false" : "true");
+    peek.inert = !open;
+    document.body.classList.toggle("peek-open", open);
+    if (!open) { clearTimeout(peekTimer); peekTimer = null; }
+  }
+  function closePeek() {
+    setPeek(false);
+    if (peekTrigger) { peekTrigger.focus(); peekTrigger = null; }
+  }
+  function kpi(label, value, tone, sub) {
+    return '<div class="peek-kpi' + (tone ? " " + tone : "") + '"><span>' + label + "</span><strong>" +
+      esc(value) + "</strong>" + (sub ? "<em>" + esc(sub) + "</em>" : "") + "</div>";
+  }
+  function renderPeek(d) {
+    peekTitle.textContent = d.run_id;
+    var running = d.status === "RUNNING" || d.status === "STARTING";
+    var html = '<div class="peek-status"><span class="badge ' + badgeClass(d.status) + '">' + esc(d.status) + "</span>" +
+      '<span class="chip mono">' + esc(d.reference_version || "—") + "</span>" +
+      '<span class="chip mono">' + secs(d.duration_seconds) + "</span></div>";
+    if (d.error_message) html += '<div class="peek-error mono">' + esc(d.error_message) + "</div>";
+    if (running) html += '<p class="peek-note">Run in progress — this panel refreshes every second.</p>';
+    if (d.input_count == null) {
+      html += '<p class="peek-note">The batch failed before row counting — nothing was published and the target table is untouched.</p>';
+    } else {
+      html += '<div class="peek-kpis">' +
+        kpi("Input", fmt(d.input_count)) +
+        kpi("Valid", fmt(d.valid_count), "ok") +
+        kpi("Rejected", fmt(d.rejected_count), "bad") +
+        kpi("Published", fmt(d.published_count), "", fmt(d.inserted_count) + " new · " + fmt(d.updated_count) + " upd · " + fmt(d.unchanged_count) + " same") +
+        "</div>";
+    }
+    html += '<dl class="peek-meta"><dt>Source file</dt><dd class="mono">' + esc(d.source_file || "—") + "</dd>" +
+      "<dt>Started</dt><dd>" + esc(fmtDt(d.started_at)) + "</dd><dt>Ended</dt><dd>" + esc(fmtDt(d.ended_at)) + "</dd></dl>";
+    peekBody.innerHTML = html;
+    peekFoot.hidden = false;
+    peekOpen.setAttribute("href", peekHref);
+    peekRerun.setAttribute("action", peekHref + "rerun/");
+    peekRerun.hidden = running;
+    if (running) peekTimer = setTimeout(loadPeek, 1000);
+  }
+  function loadPeek() {
+    fetch(peekHref + "status.json", { headers: { Accept: "application/json" } })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(renderPeek)
+      .catch(function () {
+        peekBody.innerHTML = '<p class="peek-note">Could not load this run. <a href="' + esc(peekHref) + '">Open the full run page</a>.</p>';
+      });
+  }
+  function openPeek(btn) {
+    peekTrigger = btn;
+    peekHref = btn.getAttribute("data-href");
+    peekBody.innerHTML = '<div class="peek-loading"><span class="spinner"></span> Loading run…</div>';
+    peekFoot.hidden = true;
+    setPeek(true);
+    peekClose.focus();
+    loadPeek();
+  }
+  if (peek) {
+    peekClose.addEventListener("click", closePeek);
+    peekScrim.addEventListener("click", closePeek);
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && peek.classList.contains("open")) closePeek();
+    });
+    document.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-peek]");
+      if (btn) { openPeek(btn); return; }
+      var row = ev.target.closest("tr.row-peekable");
+      if (row && !ev.target.closest("a, button, input, select")) {
+        var b = row.querySelector("[data-peek]");
+        if (b) openPeek(b);
+      }
+    });
+  }
 })();

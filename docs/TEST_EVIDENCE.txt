@@ -1,6 +1,13 @@
+RefPipe — test evidence
+=======================
+Captured on the submitting machine, 2026-11-09, from the repository root with the project venv active.
+Environment: Windows 11 (10.0.26300), Python 3.14.6, pandas 3.1.1, Django 6.1.3, SQLite (stdlib).
+Result: 72 pipeline tests + 31 Django UI tests = 103 passing, 0 failures, 0 errors.
+An earlier run in a clean Python 3.11.9 venv produced the same 72 pipeline results.$ python -m pytest -v
 ============================= test session starts =============================
-platform win32 -- Python 3.11.9, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\chbha\AppData\Local\Temp\claude\832ff6720de68b29\cd502dfb-50e3-4551-aef2-f6be8e3989f2\scratchpad\venv311\Scripts\python.exe
-rootdir: C:\Users\chbha\Desktop\sodarshan project\reference-code-pipeline-with-django-ui\reference-code-pipeline
+platform win32 -- Python 3.14.6, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\.env\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe
 collecting ... collected 72 items
 
 tests/test_expected_labels.py::test_sample_dataset_matches_expected_labels PASSED [  1%]
@@ -76,12 +83,168 @@ tests/test_validation_rules.py::test_invalid_first_copy_does_not_shadow_later_va
 tests/test_validation_rules.py::test_engines_agree_on_generated_data[allow_historical] PASSED [ 98%]
 tests/test_validation_rules.py::test_engines_agree_on_generated_data[reject] PASSED [100%]
 
-============================= 72 passed in 4.49s ==============================
+============================= 72 passed in 5.20s ==============================
 
---- Django UI tests ---
-Ran 23 tests in 4.780s
+$ python manage.py test webapp.ui -v 2
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_validated_and_quarantine_browsers (webapp.ui.tests.BrowserTests.test_validated_and_quarantine_browsers) ... 2026-11-09 12:34:01,790 INFO refpipe run_id=run_20261109T070401_4a4795 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:01,811 INFO refpipe run_id=run_20261109T070401_4a4795 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+ok
+test_compare_same_run_rejected (webapp.ui.tests.CompareTests.test_compare_same_run_rejected) ... 2026-11-09 12:34:02,068 INFO refpipe run_id=run_20261109T070402_62d94a start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:02,087 INFO refpipe run_id=run_20261109T070402_62d94a SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_compare_v1_v2 (webapp.ui.tests.CompareTests.test_compare_v1_v2) ... 2026-11-09 12:34:02,323 INFO refpipe run_id=run_20261109T070402_512e29 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:02,342 INFO refpipe run_id=run_20261109T070402_512e29 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+2026-11-09 12:34:02,513 INFO refpipe run_id=run_20261109T070402_2880c2 start input=C:/Users/manda/AppData/Local/Temp/tmp42v3fvwn/output/uploads/run_20261109T070402_2880c2/incoming_records.csv reference_version=v2 engine=vectorized
+2026-11-09 12:34:02,535 INFO refpipe run_id=run_20261109T070402_2880c2 SUCCESS input=48 valid=28 rejected=20 duplicates=2 published=28 in 0.03s
+ok
+test_dashboard_after_sample_run (webapp.ui.tests.DashboardTests.test_dashboard_after_sample_run) ... 2026-11-09 12:34:02,776 INFO refpipe run_id=run_20261109T070402_526f1d start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:02,797 INFO refpipe run_id=run_20261109T070402_526f1d SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+ok
+test_empty_dashboard (webapp.ui.tests.DashboardTests.test_empty_dashboard) ... ok
+test_failed_run_error_reaches_registry_drawer (webapp.ui.tests.QuickViewTests.test_failed_run_error_reaches_registry_drawer) ... 2026-11-09 12:34:03,087 INFO refpipe run_id=peekbad start input=C:/Users/manda/AppData/Local/Temp/tmpqhm4xwm2/output/uploads/peekbad/bad.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:03,092 ERROR refpipe run_id=peekbad FAILED: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+2026-11-09 12:34:03,093 ERROR refpipe.web web run peekbad failed
+Traceback (most recent call last):
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\webapp\ui\services.py", line 146, in worker
+    run_pipeline(conn, cfg, input_path, reference_version,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 check_entities=check_entities, event_from=event_from,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 event_to=event_to, run_id=run_id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\pipeline.py", line 86, in run_pipeline
+    batch = read_batch(input_path, cfg.strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\ingestion.py", line 56, in read_batch
+    warnings = check_header(header, strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\schema_validation.py", line 20, in check_header
+    raise PipelineError(SCHEMA_MISMATCH, f"missing required column(s): {missing}; found {cleaned}")
+src.reasons.PipelineError: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+ok
+test_registry_offers_quick_view_and_rerun (webapp.ui.tests.QuickViewTests.test_registry_offers_quick_view_and_rerun) ... 2026-11-09 12:34:03,330 INFO refpipe run_id=run_20261109T070403_bcab8e start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:03,348 INFO refpipe run_id=run_20261109T070403_bcab8e SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_status_json_carries_drawer_summary (webapp.ui.tests.QuickViewTests.test_status_json_carries_drawer_summary) ... 2026-11-09 12:34:03,554 INFO refpipe run_id=run_20261109T070403_4bbbf7 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:03,572 INFO refpipe run_id=run_20261109T070403_4bbbf7 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_download_reference_csv (webapp.ui.tests.ReferenceTests.test_download_reference_csv) ... ok
+test_entities_load (webapp.ui.tests.ReferenceTests.test_entities_load) ... ok
+test_immutability_enforced_in_form (webapp.ui.tests.ReferenceTests.test_immutability_enforced_in_form) ... ok
+test_invalid_reference_shows_errors (webapp.ui.tests.ReferenceTests.test_invalid_reference_shows_errors) ... ok
+test_load_and_browse (webapp.ui.tests.ReferenceTests.test_load_and_browse) ... ok
+test_same_content_reload_is_noop (webapp.ui.tests.ReferenceTests.test_same_content_reload_is_noop) ... ok
+test_rerun_endpoint_reuses_input_and_publishes_nothing (webapp.ui.tests.RerunSafetyTests.test_rerun_endpoint_reuses_input_and_publishes_nothing) ... 2026-11-09 12:34:04,172 INFO refpipe run_id=run_20261109T070404_77ffff start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:04,197 INFO refpipe run_id=run_20261109T070404_77ffff SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+2026-11-09 12:34:04,446 INFO refpipe run_id=run_20261109T070404_a50b87 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:04,472 INFO refpipe run_id=run_20261109T070404_a50b87 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=0 in 0.03s
+ok
+test_rerun_missing_source_does_not_create_run (webapp.ui.tests.RerunSafetyTests.test_rerun_missing_source_does_not_create_run) ... 2026-11-09 12:34:04,723 INFO refpipe run_id=run_20261109T070404_fd5fb5 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:04,743 INFO refpipe run_id=run_20261109T070404_fd5fb5 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_rerun_of_failed_run_records_error_again (webapp.ui.tests.RerunSafetyTests.test_rerun_of_failed_run_records_error_again) ... 2026-11-09 12:34:04,978 INFO refpipe run_id=badrun start input=C:/Users/manda/AppData/Local/Temp/tmpvgoaw9jw/output/uploads/badrun/bad.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:04,984 ERROR refpipe run_id=badrun FAILED: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+2026-11-09 12:34:04,985 ERROR refpipe.web web run badrun failed
+Traceback (most recent call last):
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\webapp\ui\services.py", line 146, in worker
+    run_pipeline(conn, cfg, input_path, reference_version,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 check_entities=check_entities, event_from=event_from,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 event_to=event_to, run_id=run_id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\pipeline.py", line 86, in run_pipeline
+    batch = read_batch(input_path, cfg.strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\ingestion.py", line 56, in read_batch
+    warnings = check_header(header, strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\schema_validation.py", line 20, in check_header
+    raise PipelineError(SCHEMA_MISMATCH, f"missing required column(s): {missing}; found {cleaned}")
+src.reasons.PipelineError: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+2026-11-09 12:34:05,153 INFO refpipe run_id=run_20261109T070405_c3adb6 start input=C:/Users/manda/AppData/Local/Temp/tmpvgoaw9jw/output/uploads/badrun/bad.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:05,155 ERROR refpipe run_id=run_20261109T070405_c3adb6 FAILED: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+2026-11-09 12:34:05,157 ERROR refpipe.web web run run_20261109T070405_c3adb6 failed
+Traceback (most recent call last):
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\webapp\ui\services.py", line 146, in worker
+    run_pipeline(conn, cfg, input_path, reference_version,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 check_entities=check_entities, event_from=event_from,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 event_to=event_to, run_id=run_id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\pipeline.py", line 86, in run_pipeline
+    batch = read_batch(input_path, cfg.strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\ingestion.py", line 56, in read_batch
+    warnings = check_header(header, strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\schema_validation.py", line 20, in check_header
+    raise PipelineError(SCHEMA_MISMATCH, f"missing required column(s): {missing}; found {cleaned}")
+src.reasons.PipelineError: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+ok
+test_rerun_requires_post_and_known_run (webapp.ui.tests.RerunSafetyTests.test_rerun_requires_post_and_known_run) ... 2026-11-09 12:34:05,399 INFO refpipe run_id=run_20261109T070405_87ff7a start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:05,420 INFO refpipe run_id=run_20261109T070405_87ff7a SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+ok
+test_stale_running_rows_recovered_as_failed (webapp.ui.tests.RerunSafetyTests.test_stale_running_rows_recovered_as_failed) ... ok
+test_check_entities_without_loaded_entities (webapp.ui.tests.RunFlowTests.test_check_entities_without_loaded_entities) ... 2026-11-09 12:34:05,687 INFO refpipe run_id=e0 start input=C:/Users/manda/AppData/Local/Temp/tmpyz2unxoq/output/uploads/e0/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:05,705 INFO refpipe run_id=e0 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_downloads (webapp.ui.tests.RunFlowTests.test_downloads) ... 2026-11-09 12:34:05,944 INFO refpipe run_id=run_20261109T070405_44ec87 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:05,963 INFO refpipe run_id=run_20261109T070405_44ec87 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_duplicate_run_id_rejected (webapp.ui.tests.RunFlowTests.test_duplicate_run_id_rejected) ... 2026-11-09 12:34:06,290 INFO refpipe run_id=dup start input=C:/Users/manda/AppData/Local/Temp/tmpy3k2p1qz/output/uploads/dup/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:06,308 INFO refpipe run_id=dup SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+ok
+test_failed_run_marks_failed_and_keeps_target (webapp.ui.tests.RunFlowTests.test_failed_run_marks_failed_and_keeps_target) ... 2026-11-09 12:34:06,560 INFO refpipe run_id=badrun start input=C:/Users/manda/AppData/Local/Temp/tmpkyv0aufk/output/uploads/badrun/bad.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:06,568 ERROR refpipe run_id=badrun FAILED: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+2026-11-09 12:34:06,569 ERROR refpipe.web web run badrun failed
+Traceback (most recent call last):
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\webapp\ui\services.py", line 146, in worker
+    run_pipeline(conn, cfg, input_path, reference_version,
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 check_entities=check_entities, event_from=event_from,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 event_to=event_to, run_id=run_id)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\pipeline.py", line 86, in run_pipeline
+    batch = read_batch(input_path, cfg.strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\ingestion.py", line 56, in read_batch
+    warnings = check_header(header, strict_columns)
+  File "C:\Users\manda\OneDrive\Desktop\yottaflex\refpipe\src\schema_validation.py", line 20, in check_header
+    raise PipelineError(SCHEMA_MISMATCH, f"missing required column(s): {missing}; found {cleaned}")
+src.reasons.PipelineError: SCHEMA_MISMATCH: missing required column(s): ['record_id', 'entity_id', 'product_code', 'event_date', 'amount']; found ['foo', 'bar']
+ok
+test_form_new_file_needs_name (webapp.ui.tests.RunFlowTests.test_form_new_file_needs_name) ... ok
+test_form_requires_reference (webapp.ui.tests.RunFlowTests.test_form_requires_reference) ... ok
+test_idempotent_rerun_publishes_nothing (webapp.ui.tests.RunFlowTests.test_idempotent_rerun_publishes_nothing) ... 2026-11-09 12:34:06,901 INFO refpipe run_id=r1 start input=C:/Users/manda/AppData/Local/Temp/tmpblhzr9yw/output/uploads/r1/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:06,917 INFO refpipe run_id=r1 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+2026-11-09 12:34:07,067 INFO refpipe run_id=r2 start input=C:/Users/manda/AppData/Local/Temp/tmpblhzr9yw/output/uploads/r2/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:07,092 INFO refpipe run_id=r2 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=0 in 0.03s
+ok
+test_new_run_against_loaded_version (webapp.ui.tests.RunFlowTests.test_new_run_against_loaded_version) ... 2026-11-09 12:34:07,340 INFO refpipe run_id=first start input=C:/Users/manda/AppData/Local/Temp/tmp7eybp4j7/output/uploads/first/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:07,359 INFO refpipe run_id=first SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.02s
+2026-11-09 12:34:07,502 INFO refpipe run_id=second start input=C:/Users/manda/AppData/Local/Temp/tmp7eybp4j7/output/uploads/second/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:07,525 INFO refpipe run_id=second SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=0 in 0.03s
+ok
+test_new_run_with_uploads (webapp.ui.tests.RunFlowTests.test_new_run_with_uploads) ... 2026-11-09 12:34:07,810 INFO refpipe run_id=web_test_v1 start input=C:/Users/manda/AppData/Local/Temp/tmpx5pd4_a6/output/uploads/web_test_v1/incoming_records.csv reference_version=v1 engine=vectorized
+2026-11-09 12:34:07,843 INFO refpipe run_id=web_test_v1 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.04s
+ok
+test_sample_run_end_to_end (webapp.ui.tests.RunFlowTests.test_sample_run_end_to_end) ... 2026-11-09 12:34:08,059 INFO refpipe run_id=run_20261109T070408_842b06 start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:08,079 INFO refpipe run_id=run_20261109T070408_842b06 SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+ok
+test_status_endpoint_and_404s (webapp.ui.tests.RunFlowTests.test_status_endpoint_and_404s) ... 2026-11-09 12:34:08,390 INFO refpipe run_id=run_20261109T070408_80d9bf start input=C:/Users/manda/OneDrive/Desktop/yottaflex/refpipe/data/sample/incoming_records.csv reference_version=sample_v1 engine=vectorized
+2026-11-09 12:34:08,411 INFO refpipe run_id=run_20261109T070408_80d9bf SUCCESS input=48 valid=22 rejected=26 duplicates=2 published=22 in 0.03s
+ok
+test_swapped_files_rejected_before_run (webapp.ui.tests.RunFlowTests.test_swapped_files_rejected_before_run) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 6.898s
 
 OK
-Destroying test database for alias 'default'...
-Found 23 test(s).
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 31 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: messages, staticfiles, ui
+  Apply all migrations: (none)
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  No migrations to apply.
 System check identified no issues (0 silenced).

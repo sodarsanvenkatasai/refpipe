@@ -49,8 +49,11 @@ Useful commands: `python -m src.cli runs` (run history), `recover` (close runs k
 ## Web UI (Django)
 
 A local web console wraps the same engine — dashboard with charts, run uploads with live progress,
-run detail with reconciliation checks and report downloads, run comparison, reference-version and
-entity management, and searchable browsers for the target table and quarantine.
+run detail with reconciliation checks and report downloads, a **Rerun safely** action that re-executes a
+finished run from its stored input, run comparison, reference-version and entity management, and searchable
+browsers for the target table and quarantine. Failed runs show their recorded error both on the run page and
+in the runs registry — where a click on any row opens a quick-view drawer with the full error, the counts and the
+rerun action — and a server restart closes any run left `RUNNING` by a killed process.
 
 ```bash
 pip install -r requirements.txt
@@ -59,9 +62,12 @@ python manage.py runserver 127.0.0.1:8000
 # open http://127.0.0.1:8000/ and click "Run the 48-row sample"
 ```
 
+On Windows, double-click **`start.bat`** instead: it activates the venv, migrates, starts the server only if
+port 8000 is free, and opens the browser.
+
 It shares `output/pipeline.db` with the CLI (runs appear in both). Full guide:
 [docs/WEB_UI.md](docs/WEB_UI.md) · screenshots: [docs/ui_screenshots/](docs/ui_screenshots/) ·
-UI tests: `python manage.py test webapp.ui` (23 tests).
+UI tests: `python manage.py test webapp.ui` (31 tests).
 
 ## What it does
 
@@ -128,9 +134,9 @@ Business logic lives in the modules; `cli.py` only parses arguments.
   Tests verify the pipeline's v1 *and* v2 outcome for every row against the labels (sample + 5,000 generated rows).
 * All data is synthetic.
 
-## Results (this machine, Windows 11, Python 3.14, pandas 3.0.5)
+## Results (this machine, Windows 11, Python 3.14.6, pandas 3.1.1, Django 6.1.3)
 
-* Tests: `72 passed` (+ 23 Django UI tests) – evidence in [docs/TEST_EVIDENCE.txt](docs/TEST_EVIDENCE.txt).
+* Tests: **103 passing** — `72 passed` (pipeline) + `Ran 31 tests ... OK` (Django UI). Evidence in [docs/TEST_EVIDENCE.txt](docs/TEST_EVIDENCE.txt).
 * Sample, v1: 48 in → 22 valid, 26 rejected (2 duplicates), reconciliation 10/10 checks pass.
   Sample, v2: 28 valid / 20 rejected; compare: 6 rejected→valid, 1 valid→now-deprecated, 1 reason changed, 0 valid→rejected.
   Rerun of v2: `inserted 0, updated 0, unchanged 28`.
@@ -145,6 +151,7 @@ reference version. If any check fails the run is rolled back and marked `FAILED`
 
 ## Documentation
 
+* [docs/REQUIREMENTS_COVERAGE.md](docs/REQUIREMENTS_COVERAGE.md) – every brief requirement mapped to the code and the test that proves it, plus the deliberate deviations.
 * [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) – schemas, types, keys, grain, nullability, derived fields, naming.
 * [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) – trade-offs and alternatives.
 * [docs/PERFORMANCE.md](docs/PERFORMANCE.md) – measurements and the optimization.
@@ -152,8 +159,10 @@ reference version. If any check fails the run is rolled back and marked `FAILED`
 
 ## Known limitations / next steps
 
-* SQLite is single-writer; a concurrent second run would wait/fail on the lock. A crash that kills the process
-  leaves the run row in `RUNNING`; `python -m src.cli recover` marks such runs `FAILED` (safe: publishing is one transaction) so a retry is clearly allowed.
+* SQLite is single-writer; a concurrent second run would wait/fail on the lock (the web console serializes runs
+  with a process-wide lock). A crash that kills the process leaves the run row in `RUNNING`;
+  `python -m src.cli recover` marks such runs `FAILED`, and the web console does it automatically at startup
+  (safe: publishing is one transaction), so a retry is clearly allowed.
 * Whole batch is processed in memory (fine to millions of rows; chunking would be next for much larger files).
 * Only the first failure per row is recorded (all-failures reporting would need a per-rule matrix).
 * The current-state target keeps a v1-valid row if a v2 run rejects it; the change is visible via `compare`

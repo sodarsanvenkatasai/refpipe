@@ -8,6 +8,12 @@
 <a class="btn btn-sm btn-ghost" href="{% url 'ui:run_download' run.run_id 'reconciliation.json' %}">Reconciliation</a>
 <a class="btn btn-sm btn-ghost" href="{% url 'ui:run_download' run.run_id 'rejects.csv' %}">Rejects CSV</a>
 {% endif %}
+{% if run.status == 'SUCCESS' or run.status == 'FAILED' %}
+<form method="post" action="{% url 'ui:run_rerun' run.run_id %}" class="inline-form">{% csrf_token %}
+  <button class="btn btn-sm btn-volt" type="submit"
+          title="Re-executes the stored input against {{ run.reference_version }} with the same options. Publish is one idempotent transaction, so a rerun never duplicates rows.">Rerun safely</button>
+</form>
+{% endif %}
 <a class="btn btn-sm btn-primary" href="{% url 'ui:compare' %}">Compare</a>
 {% endblock %}
 
@@ -62,11 +68,12 @@
     {% if reasons %}
     <ul class="hbars">
       {% for r in reasons %}
-      <li>
+      <li class="hbar-tone-{{ r.reason|reason_tone }}">
         <div class="hbar-head">
           <a class="badge {{ r.reason|reason_class }}" href="{% querystring tab='rejects' reason=r.reason page=1 %}">{{ r.reason|reason_label }}</a>
-          <span class="mono">{{ r.count|comma }}</span>
+          <span class="mono hbar-val">{{ r.count|comma }}<em>{{ r.share }}%</em></span>
         </div>
+        <div class="hbar-track" title="{{ r.count|comma }} rejects in this run · {{ r.share }}%"><div class="hbar-fill" style="width: {{ r.pct }}%"></div></div>
       </li>
       {% endfor %}
     </ul>

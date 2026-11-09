@@ -7,9 +7,17 @@
   </tr></thead>
   <tbody>
   {% for r in runs %}
-    <tr>
-      <td><a class="row-link mono" href="{% url 'ui:run_detail' r.run_id %}">{{ r.run_id }}</a>
-        <div class="cell-sub" title="{{ r.source_file }}">{{ r.source_file|truncatechars:42 }}</div></td>
+    <tr class="row-peekable">
+      <td><span class="run-cell">
+          <a class="row-link mono" href="{% url 'ui:run_detail' r.run_id %}">{{ r.run_id }}</a>
+          <button type="button" class="peek-btn" data-peek="{{ r.run_id }}" data-href="{% url 'ui:run_detail' r.run_id %}"
+                  title="Quick view: full error, counts and rerun without leaving the list"
+                  aria-label="Quick view run {{ r.run_id }}">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M14.5 4.5v15"/></svg>
+          </button>
+        </span>
+        <div class="cell-sub" title="{{ r.source_file }}">{{ r.source_file|truncatechars:42 }}</div>
+        {% if r.status == 'FAILED' and r.error_message %}<div class="cell-sub cell-error" title="{{ r.error_message }}">{{ r.error_message|truncatechars:70 }}</div>{% endif %}</td>
       <td><span class="badge {{ r.status|status_class }}">{{ r.status }}</span></td>
       <td><span class="chip mono">{{ r.reference_version }}</span></td>
       <td class="num">{{ r.input_count|comma }}</td>

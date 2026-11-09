@@ -122,6 +122,25 @@
   </footer>
 </div>
 
+<div class="peek-scrim" id="peekScrim"></div>
+<aside class="peek" id="peek" role="dialog" aria-modal="true" aria-labelledby="peekTitle" aria-hidden="true" inert>
+  <header class="peek-head">
+    <div>
+      <div class="eyebrow">Quick view</div>
+      <h2 id="peekTitle" class="mono">Run</h2>
+    </div>
+    <button type="button" class="peek-close" id="peekClose" aria-label="Close quick view">&times;</button>
+  </header>
+  <div class="peek-body" id="peekBody"></div>
+  <footer class="peek-foot" id="peekFoot" hidden>
+    <form method="post" id="peekRerun" class="inline-form">{% csrf_token %}
+      <button class="btn btn-sm btn-volt" type="submit"
+              title="Re-executes the stored input with the same options. Publish is one idempotent transaction, so a rerun never duplicates rows.">Rerun safely</button>
+    </form>
+    <a class="btn btn-sm btn-primary" id="peekOpen">Open full run</a>
+  </footer>
+</aside>
+
 <dialog class="palette" id="palette" aria-label="Command palette">
   <div class="palette-head">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>

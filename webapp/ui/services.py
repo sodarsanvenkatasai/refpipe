@@ -17,7 +17,7 @@ from django.conf import settings
 from src.compare import compare_runs
 from src.config import Config, load_config
 from src.db import connect
-from src.metrics import new_run_id
+from src.metrics import new_run_id, recover_stale_runs as _recover_stale_runs
 from src.pipeline import run_pipeline
 from src.reasons import REASON_ORDER
 from src.reference_loader import load_entities, store_reference
@@ -72,6 +72,12 @@ def _like(q: str) -> str:
 def run_exists(run_id: str) -> bool:
     with pipeline_conn() as conn:
         return conn.execute("SELECT 1 FROM pipeline_runs WHERE run_id=?", (run_id,)).fetchone() is not None
+
+
+def recover_stale_runs() -> list[str]:
+    """Mark RUNNING rows left by a killed server process as FAILED so retries are safe."""
+    with pipeline_conn() as conn:
+        return _recover_stale_runs(conn)
 
 
 def get_run(run_id: str) -> dict | None:
@@ -153,7 +159,11 @@ def run_status(run_id: str) -> dict:
     run = get_run(run_id)
     if run is None:
         return {"run_id": run_id, "status": "STARTING"}
-    return {"run_id": run_id, "status": run["status"], "error_message": run["error_message"]}
+    keys = ("status", "error_message", "reference_version", "source_file", "input_count",
+            "valid_count", "rejected_count", "duplicate_count", "published_count",
+            "inserted_count", "updated_count", "unchanged_count", "duration_seconds",
+            "started_at", "ended_at")
+    return {"run_id": run_id, **{k: run[k] for k in keys}}
 
 
 def rejects_for_run(run_id: str, reason: str = "", q: str = "", page: int = 1) -> dict:
@@ -185,8 +195,14 @@ def reasons_for_run(run_id: str) -> list[dict]:
             "SELECT rejection_reason AS reason, COUNT(*) AS n FROM rejected_records"
             " WHERE run_id=? GROUP BY rejection_reason", (run_id,)).fetchall()
     counts = {r["reason"]: r["n"] for r in rows}
-    return [{"reason": r, "count": counts[r]} for r in REASON_ORDER if r in counts] + [
+    out = [{"reason": r, "count": counts[r]} for r in REASON_ORDER if r in counts] + [
         {"reason": r, "count": n} for r, n in sorted(counts.items()) if r not in REASON_ORDER]
+    total = sum(counts.values())
+    top = max(counts.values(), default=0)
+    for r in out:
+        r["pct"] = round(100 * r["count"] / top, 1) if top else 0
+        r["share"] = round(100 * r["count"] / total, 1) if total else 0
+    return out
 
 
 def report_path(run_id: str, filename: str) -> Path | None:
@@ -331,8 +347,10 @@ def dashboard_data() -> dict:
     totals["valid_pct"] = round(100 * totals["valid_rows"] / total_rows, 1) if total_rows else 0
     totals["success_pct"] = round(100 * (totals["success"] or 0) / totals["runs"], 1) if totals["runs"] else 0
     max_reason = max((r["n"] for r in reasons), default=0)
+    total_rejects = sum(r["n"] for r in reasons)
     for r in reasons:
         r["pct"] = round(100 * r["n"] / max_reason, 1) if max_reason else 0
+        r["share"] = round(100 * r["n"] / total_rejects, 1) if total_rejects else 0
     max_trend = max((t["valid_count"] + t["rejected_count"] for t in trend), default=0)
     for t in trend:
         n = t["valid_count"] + t["rejected_count"]

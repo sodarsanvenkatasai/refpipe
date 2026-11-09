@@ -138,6 +138,35 @@ def run_sample(request):
     return redirect(reverse("ui:run_detail", args=[run_id]) + "?started=1")
 
 
+@require_POST
+def run_rerun(request, run_id: str):
+    """Re-execute a finished run from its stored input; publishing is one idempotent upsert."""
+    run = services.get_run(run_id)
+    if run is None:
+        raise Http404("Unknown run id")
+    if run["status"] == "RUNNING":
+        messages.error(request, f"Run {run_id} is still in progress — wait for it to finish before rerunning.")
+        return redirect(reverse("ui:run_detail", args=[run_id]))
+    source = Path(run["source_file"])
+    if not source.is_file():
+        messages.error(request, f"The stored input for {run_id} is no longer on disk. Upload it again via New run.")
+        return redirect(reverse("ui:run_detail", args=[run_id]))
+    config = _read_json_str(run.get("config_json")) or {}
+    new_id = services.start_run(
+        input_path=str(source), reference_version=run["reference_version"],
+        check_entities=bool(config.get("check_entities")),
+        deprecated_policy=config.get("deprecated_policy"),
+        strict_columns=config.get("strict_columns"),
+        event_from=config.get("event_from"), event_to=config.get("event_to"),
+    )
+    messages.success(
+        request,
+        f"Rerun {new_id} started from the stored input of {run_id}. "
+        "Publishing is idempotent — rows already in the target are matched, never duplicated.",
+    )
+    return redirect(reverse("ui:run_detail", args=[new_id]) + "?started=1")
+
+
 def run_detail(request, run_id: str):
     run = services.get_run(run_id)
     started = request.GET.get("started") == "1"

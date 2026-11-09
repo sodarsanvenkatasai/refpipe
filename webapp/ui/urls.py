@@ -10,6 +10,7 @@ urlpatterns = [
     path("runs/new/", views.run_new, name="run_new"),
     path("runs/sample/", views.run_sample, name="run_sample"),
     path("runs/<str:run_id>/", views.run_detail, name="run_detail"),
+    path("runs/<str:run_id>/rerun/", views.run_rerun, name="run_rerun"),
     path("runs/<str:run_id>/status.json", views.run_status, name="run_status"),
     path("runs/<str:run_id>/download/<str:filename>", views.run_download, name="run_download"),
     path("samples/download/<str:filename>/", views.sample_download, name="sample_download"),

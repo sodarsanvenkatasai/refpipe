@@ -51,6 +51,15 @@ def reason_class(code):
 
 
 @register.filter
+def reason_tone(code):
+    if code in WARN_REASONS:
+        return "amber"
+    if code in REF_REASONS:
+        return "info"
+    return "red"
+
+
+@register.filter
 def status_class(status):
     return {"SUCCESS": "badge-green", "FAILED": "badge-red", "RUNNING": "badge-amber",
             "STARTING": "badge-amber", "ACTIVE": "badge-green", "DEPRECATED": "badge-amber",
