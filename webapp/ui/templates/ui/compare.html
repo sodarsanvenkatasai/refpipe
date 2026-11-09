@@ -4,13 +4,19 @@
 {% block crumbs %}<span>Pipeline</span><span class="crumb-sep">/</span><strong>Compare runs</strong>{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Compare two runs</h1>
-  <p class="muted">Typically the same input under two reference versions (v1 → v2).
-     Each record is represented by its first occurrence in the file.</p>
+  <div>
+    <div class="eyebrow">Pipeline · version diff</div>
+    <h1>Compare two runs</h1>
+    <p class="page-desc">Typically the same input under two reference versions (v1 → v2). Each record is represented by its first occurrence in the file.</p>
+  </div>
+  <div class="page-meta">
+    <span class="chip">A → B</span>
+    <span class="chip mono">first occurrence</span>
+  </div>
 </div>
 
 <section class="card">
-  <form method="get" class="filters">
+  <form method="get" class="filters" role="search">
     <div class="field"><label for="{{ form.run_a.id_for_label }}">{{ form.run_a.label }}</label>{{ form.run_a }}</div>
     <div class="compare-arrow" aria-hidden="true">→</div>
     <div class="field"><label for="{{ form.run_b.id_for_label }}">{{ form.run_b.label }}</label>{{ form.run_b }}</div>
@@ -20,21 +26,32 @@
   {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors }}</div>{% endif %}
 </section>
 
+{% if not result %}
+<section class="card compare-empty">
+  <div class="compare-empty-icon" aria-hidden="true">A/B</div>
+  <div>
+    <h2 class="card-title">Pick a baseline and a candidate</h2>
+    <p class="muted small">Choose two successfully finished runs above, then hit Compare. You&rsquo;ll get outcome transitions, changed product codes and record-level differences side by side.</p>
+  </div>
+</section>
+{% endif %}
+
 {% if result %}
-<section class="grid-2">
+<div class="compare-summary">
   <div class="card run-meta-card">
     <div class="muted small">Run A · baseline</div>
     <div class="mono"><a href="{% url 'ui:run_detail' result.run_a.run_id %}">{{ result.run_a.run_id }}</a></div>
     <div><span class="chip mono">{{ result.run_a.reference_version }}</span> <span class="badge {{ result.run_a.status|status_class }}">{{ result.run_a.status }}</span></div>
     <div class="muted small">{{ result.run_a.input_count|comma }} in · {{ result.run_a.valid_count|comma }} valid · {{ result.run_a.rejected_count|comma }} rejected</div>
   </div>
+  <div class="vs-badge" aria-hidden="true">VS</div>
   <div class="card run-meta-card">
     <div class="muted small">Run B · new</div>
     <div class="mono"><a href="{% url 'ui:run_detail' result.run_b.run_id %}">{{ result.run_b.run_id }}</a></div>
     <div><span class="chip mono">{{ result.run_b.reference_version }}</span> <span class="badge {{ result.run_b.status|status_class }}">{{ result.run_b.status }}</span></div>
     <div class="muted small">{{ result.run_b.input_count|comma }} in · {{ result.run_b.valid_count|comma }} valid · {{ result.run_b.rejected_count|comma }} rejected</div>
   </div>
-</section>
+</div>
 
 <section class="card">
   <h2 class="card-title">What changed</h2>

@@ -46,7 +46,7 @@ def reason_class(code):
     if code in WARN_REASONS:
         return "badge-amber"
     if code in REF_REASONS:
-        return "badge-indigo"
+        return "badge-info"
     return "badge-red"
 
 
@@ -98,7 +98,7 @@ def pretty_json(value):
 
 @register.simple_tag
 def donut_svg(valid, rejected, size=148):
-    """Offline SVG donut: share of valid rows (green) vs rejected (red)."""
+    """Offline SVG donut: share of valid rows (signal green) vs rejected (rose)."""
     try:
         valid, rejected = int(valid or 0), int(rejected or 0)
     except (TypeError, ValueError):
@@ -109,13 +109,65 @@ def donut_svg(valid, rejected, size=148):
     svg = f"""
 <svg viewBox="0 0 42 42" width="{size}" height="{size}" role="img"
      aria-label="{pct}% valid, {100 - pct if total else 0}% rejected">
-  <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#e2e8f0" stroke-width="5"></circle>
-  <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#ef4444" stroke-width="5"
+  <defs>
+    <linearGradient id="donut-valid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5eead4"></stop>
+      <stop offset="100%" stop-color="#16a34a"></stop>
+    </linearGradient>
+    <linearGradient id="donut-rejected" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185"></stop>
+      <stop offset="100%" stop-color="#e11d48"></stop>
+    </linearGradient>
+  </defs>
+  <circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" stroke-width="4.4"></circle>
+  <circle class="donut-slice" cx="21" cy="21" r="15.9155" fill="none" stroke="url(#donut-rejected)" stroke-width="4.4"
           stroke-dasharray="{100 - dash if total else 0} {dash if total else 100}"
-          stroke-dashoffset="25" stroke-linecap="butt"></circle>
-  <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#22c55e" stroke-width="5"
-          stroke-dasharray="{dash} {100 - dash}" stroke-dashoffset="25" stroke-linecap="butt"></circle>
+          stroke-dashoffset="25" stroke-linecap="round" style="animation-delay:.15s"></circle>
+  <circle class="donut-slice" cx="21" cy="21" r="15.9155" fill="none" stroke="url(#donut-valid)" stroke-width="4.4"
+          stroke-dasharray="{dash} {100 - dash if total else 100}" stroke-dashoffset="25" stroke-linecap="round"></circle>
   <text x="21" y="20.4" text-anchor="middle" class="donut-num">{pct}%</text>
   <text x="21" y="25.4" text-anchor="middle" class="donut-cap">valid</text>
 </svg>"""
     return mark_safe(svg)
+
+
+SPARK_COLUMNS = {"runs": "input_count", "valid": "valid_count", "rejected": "rejected_count"}
+
+
+@register.simple_tag
+def spark_svg(kind):
+    """Inline sparkline of the last 12 runs (or loaded snapshots) for a KPI card."""
+    from .. import services
+
+    series = []
+    try:
+        with services.pipeline_conn() as conn:
+            if kind == "versions":
+                rows = conn.execute(
+                    "SELECT row_count FROM reference_versions"
+                    " ORDER BY loaded_at ASC, reference_version ASC"
+                ).fetchall()
+            else:
+                col = SPARK_COLUMNS.get(kind, "input_count")
+                rows = conn.execute(
+                    f"SELECT {col} FROM pipeline_runs ORDER BY started_at ASC, run_id ASC"
+                ).fetchall()
+            series = [r[0] or 0 for r in rows][-12:]
+    except Exception:
+        series = []
+    if not series:
+        series = [0, 0]
+    elif len(series) == 1:
+        series = [series[0], series[0]]
+    lo, hi = min(series), max(series)
+    span = (hi - lo) or 1
+    pts = [(round(i * 120 / (len(series) - 1), 2),
+            round(30 - (v - lo) * 26 / span + 3, 2)) for i, v in enumerate(series)]
+    line = " ".join(f"{x},{y}" for x, y in pts)
+    area = "M0,36 L" + " L".join(f"{x},{y}" for x, y in pts) + " L120,36 Z"
+    return mark_safe(
+        f'<svg class="spark" viewBox="0 0 120 36" preserveAspectRatio="none" aria-hidden="true">'
+        f'<path d="{area}" fill="currentColor" opacity=".12"></path>'
+        f'<polyline points="{line}" fill="none" stroke="currentColor" stroke-width="2"'
+        f' stroke-linecap="round" stroke-linejoin="round"></polyline></svg>'
+    )

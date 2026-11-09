@@ -16,6 +16,7 @@
 <section class="card running-card" data-poll="{% url 'ui:run_status' run.run_id %}">
   <div class="spinner spinner-lg" aria-hidden="true"></div>
   <div>
+    <div class="eyebrow">Run detail · in progress</div>
     <h1 class="running-title">Run in progress…</h1>
     <p class="muted">Ingest → validate → transform → stage → publish → reconcile.
        This page refreshes automatically when the run finishes.</p>
@@ -23,6 +24,7 @@
 </section>
 {% else %}
 
+<div class="eyebrow banner-lead">Pipeline · run detail</div>
 <div class="run-banner {% if run.status == 'SUCCESS' %}banner-ok{% else %}banner-bad{% endif %}">
   <div class="banner-icon" aria-hidden="true">{% if run.status == 'SUCCESS' %}✓{% else %}✕{% endif %}</div>
   <div class="banner-body">
@@ -38,19 +40,19 @@
 {% if run.status == 'SUCCESS' %}
 <section class="kpi-grid kpi-grid-6">
   <div class="card kpi kpi-sm"><div class="kpi-label">Input</div><div class="kpi-value">{{ run.input_count|comma }}</div></div>
-  <div class="card kpi kpi-sm"><div class="kpi-label">Valid</div><div class="kpi-value ok">{{ run.valid_count|comma }}</div></div>
-  <div class="card kpi kpi-sm"><div class="kpi-label">Rejected</div><div class="kpi-value bad">{{ run.rejected_count|comma }}</div></div>
-  <div class="card kpi kpi-sm"><div class="kpi-label">Duplicates</div><div class="kpi-value">{{ run.duplicate_count|comma }}</div><div class="kpi-sub">subset of rejected</div></div>
-  <div class="card kpi kpi-sm"><div class="kpi-label">Published</div><div class="kpi-value">{{ run.published_count|comma }}</div><div class="kpi-sub">{{ run.inserted_count|comma }} new · {{ run.updated_count|comma }} upd · {{ run.unchanged_count|comma }} same</div></div>
+  <div class="card kpi kpi-sm kpi-success"><div class="kpi-label">Valid</div><div class="kpi-value ok">{{ run.valid_count|comma }}</div></div>
+  <div class="card kpi kpi-sm kpi-danger"><div class="kpi-label">Rejected</div><div class="kpi-value bad">{{ run.rejected_count|comma }}</div></div>
+  <div class="card kpi kpi-sm kpi-accent"><div class="kpi-label">Duplicates</div><div class="kpi-value">{{ run.duplicate_count|comma }}</div><div class="kpi-sub">subset of rejected</div></div>
+  <div class="card kpi kpi-sm kpi-info"><div class="kpi-label">Published</div><div class="kpi-value">{{ run.published_count|comma }}</div><div class="kpi-sub">{{ run.inserted_count|comma }} new · {{ run.updated_count|comma }} upd · {{ run.unchanged_count|comma }} same</div></div>
   <div class="card kpi kpi-sm"><div class="kpi-label">Skipped</div><div class="kpi-value">{{ run.skipped_out_of_range|comma }}</div><div class="kpi-sub">out of event range</div></div>
 </section>
 {% endif %}
 
 <nav class="tabs" aria-label="Run sections">
-  <a class="tab {% if tab == 'overview' %}active{% endif %}" href="{% querystring tab='overview' page=1 %}">Overview</a>
-  <a class="tab {% if tab == 'rejects' %}active{% endif %}" href="{% querystring tab='rejects' page=1 %}">Rejects {% if run.rejected_count %}<span class="tab-count">{{ run.rejected_count }}</span>{% endif %}</a>
-  <a class="tab {% if tab == 'outcomes' %}active{% endif %}" href="{% querystring tab='outcomes' page=1 %}">Row outcomes</a>
-  <a class="tab {% if tab == 'reconciliation' %}active{% endif %}" href="{% querystring tab='reconciliation' page=1 %}">Reconciliation {% if checks %}<span class="tab-count tab-count-ok">{{ checks|length }}</span>{% endif %}</a>
+  <a class="tab {% if tab == 'overview' %}active{% endif %}" {% if tab == 'overview' %}aria-current="page"{% endif %} href="{% querystring tab='overview' page=1 %}">Overview</a>
+  <a class="tab {% if tab == 'rejects' %}active{% endif %}" {% if tab == 'rejects' %}aria-current="page"{% endif %} href="{% querystring tab='rejects' page=1 %}">Rejects {% if run.rejected_count %}<span class="tab-count">{{ run.rejected_count }}</span>{% endif %}</a>
+  <a class="tab {% if tab == 'outcomes' %}active{% endif %}" {% if tab == 'outcomes' %}aria-current="page"{% endif %} href="{% querystring tab='outcomes' page=1 %}">Row outcomes</a>
+  <a class="tab {% if tab == 'reconciliation' %}active{% endif %}" {% if tab == 'reconciliation' %}aria-current="page"{% endif %} href="{% querystring tab='reconciliation' page=1 %}">Reconciliation {% if checks %}<span class="tab-count tab-count-ok">{{ checks|length }}</span>{% endif %}</a>
 </nav>
 
 {% if tab == 'overview' %}
@@ -79,7 +81,7 @@
     <dl class="meta">
       <dt>Source file</dt><dd class="mono" title="{{ run.source_file }}">{{ run.source_file }}</dd>
       <dt>Checksum</dt><dd class="mono small">{{ run.source_checksum|default:"—" }}</dd>
-      <dt>Reference version</dt><dd><a class="chip mono" href="{% url 'ui:reference_detail' run.reference_version %}">{{ run.reference_version }}</a></dd>
+      <dt>Reference version</dt><dd><a class="chip mono chip-link" href="{% url 'ui:reference_detail' run.reference_version %}">{{ run.reference_version }}</a></dd>
       <dt>Started</dt><dd>{{ run.started_at|dt }}</dd>
       <dt>Ended</dt><dd>{{ run.ended_at|dt }}</dd>
       {% if summary.stage_seconds %}
@@ -96,15 +98,15 @@
 {% elif tab == 'rejects' %}
 <section class="card">
   <div class="card-head"><h2 class="card-title">Quarantined rows <span class="muted small">raw payload preserved</span></h2></div>
-  <form method="get" class="filters">
+  <form method="get" class="filters" role="search">
     <input type="hidden" name="tab" value="rejects">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search record id or payload…" class="input">
-    <select name="reason" class="input">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record id or payload…" class="input" aria-label="Search rejects">
+    <select name="reason" class="input" aria-label="Filter by rejection reason">
       <option value="">All reasons</option>
       {% for rc in reason_choices %}<option value="{{ rc }}" {% if rc == reason %}selected{% endif %}>{{ rc|reason_label }}</option>{% endfor %}
     </select>
-    <button class="btn btn-ghost" type="submit">Filter</button>
-    {% if q or reason %}<a class="btn btn-sm btn-ghost" href="{% querystring q='' reason='' page=1 %}">Clear</a>{% endif %}
+    <button class="btn btn-ghost" type="submit">Apply filters</button>
+    {% if q or reason %}<a class="btn btn-ghost" href="{% querystring q='' reason='' page=1 %}">Clear</a>{% endif %}
   </form>
   <div class="table-wrap">
   <table class="table">
@@ -130,12 +132,12 @@
   <div class="card-head"><h2 class="card-title">Every processed row <span class="muted small">first failure wins</span></h2></div>
   <form method="get" class="filters">
     <input type="hidden" name="tab" value="outcomes">
-    <select name="outcome" class="input">
+    <select name="outcome" class="input" aria-label="Filter by outcome">
       <option value="">All outcomes</option>
       <option value="VALID" {% if outcome == 'VALID' %}selected{% endif %}>Valid</option>
       <option value="REJECTED" {% if outcome == 'REJECTED' %}selected{% endif %}>Rejected</option>
     </select>
-    <button class="btn btn-ghost" type="submit">Filter</button>
+    <button class="btn btn-ghost" type="submit">Apply filter</button>
   </form>
   <div class="table-wrap">
   <table class="table">

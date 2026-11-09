@@ -4,21 +4,41 @@
 {% block crumbs %}<a href="{% url 'ui:reference_list' %}">Versions</a><span class="crumb-sep">/</span><strong>Load new</strong>{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Load a reference snapshot</h1>
-  <p class="muted">The file is validated (columns, statuses, dates, duplicate and overlapping windows)
-     before it is stored. Versions are immutable: same name + same content is a no-op;
-     same name + different content is refused.</p>
+  <div>
+    <div class="eyebrow">Reference data · new snapshot</div>
+    <h1>Load a reference snapshot</h1>
+    <p class="page-desc">The file is validated before it is stored. Versions are immutable: same name + same content is a no-op; same name + different content is refused.</p>
+  </div>
+  <div class="page-meta">
+    <span class="chip mono">csv · utf-8</span>
+  </div>
 </div>
-<section class="card form-card form-narrow">
-  <form method="post" enctype="multipart/form-data" novalidate>
-    {% csrf_token %}
-    {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors }}</div>{% endif %}
-    {% include "ui/partials/field.html" with field=form.reference_version %}
-    {% include "ui/partials/field.html" with field=form.reference_file %}
-    <div class="form-actions">
-      <button class="btn btn-primary" type="submit">Validate &amp; load</button>
-      <a class="btn btn-ghost" href="{% url 'ui:reference_list' %}">Cancel</a>
-    </div>
-  </form>
-</section>
+
+<div class="form-layout">
+  <section class="card form-card">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors }}</div>{% endif %}
+      {% include "ui/partials/field.html" with field=form.reference_version %}
+      {% include "ui/partials/field.html" with field=form.reference_file %}
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Validate &amp; load</button>
+        <a class="btn btn-ghost" href="{% url 'ui:reference_list' %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+
+  <aside class="aside-stack" aria-label="Reference guidance">
+    <section class="card guide-card">
+      <h2 class="guide-title">What gets validated</h2>
+      <ol class="guide-steps">
+        <li><strong>Columns</strong>Exact lowercase names: product_code, description, status, effective_from, effective_to.</li>
+        <li><strong>Statuses</strong>Every row must carry a supported code status.</li>
+        <li><strong>Dates</strong>Windows are inclusive; blank effective_to means open-ended.</li>
+        <li><strong>Overlaps</strong>Duplicate or overlapping windows for the same code are rejected.</li>
+      </ol>
+      <div class="guide-foot">Once loaded, the snapshot is checksummed and can no longer change.</div>
+    </section>
+  </aside>
+</div>
 {% endblock %}

@@ -1,58 +1,109 @@
 {% load static ui_extras %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef1f8">
   <title>{% block title %}RefPipe UI{% endblock %} · Reference-Code Pipeline</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("refpipe.theme");
+        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) { /* storage blocked: stay light */ }
+    })();
+  </script>
   <link rel="stylesheet" href="{% static 'ui/css/app.css' %}">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Cpath d='M8 11h16M8 16h10M8 21h13' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232f5bff'/%3E%3Cstop offset='1' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='10' fill='url(%23g)'/%3E%3Cpath d='M9 20.5 13.5 11l4 8 2.5-5h3' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
-<div class="shell">
-  <aside class="sidebar" id="sidebar">
-    <a class="brand" href="{% url 'ui:dashboard' %}">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32" width="28" height="28"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path d="M8 11h16M8 16h10M8 21h13" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
-      </span>
-      <span class="brand-text">RefPipe<span class="brand-sub">validation console</span></span>
-    </a>
-    <nav class="nav" aria-label="Main">
-      <div class="nav-group">Overview</div>
-      <a class="nav-link {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'ui:dashboard' %}">
-        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/></svg>Dashboard</a>
-      <div class="nav-group">Pipeline</div>
-      <a class="nav-link {% if nav == 'new_run' %}active{% endif %}" href="{% url 'ui:run_new' %}">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New run</a>
-      <a class="nav-link {% if nav == 'runs' %}active{% endif %}" href="{% url 'ui:run_list' %}">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Runs</a>
-      <a class="nav-link {% if nav == 'compare' %}active{% endif %}" href="{% url 'ui:compare' %}">
-        <svg viewBox="0 0 24 24"><path d="M9 3v18M15 3v18M3 8h6M15 16h6"/></svg>Compare runs</a>
-      <div class="nav-group">Reference data</div>
-      <a class="nav-link {% if nav == 'reference' %}active{% endif %}" href="{% url 'ui:reference_list' %}">
-        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5zM8 8h8M8 12h6"/></svg>Versions</a>
-      <a class="nav-link {% if nav == 'entities' %}active{% endif %}" href="{% url 'ui:entities' %}">
-        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M16 8.5a2.8 2.8 0 1 0 0-1M17.5 15c1.9.5 3.1 2 3.5 4.5"/></svg>Entities</a>
-      <div class="nav-group">Data</div>
-      <a class="nav-link {% if nav == 'validated' %}active{% endif %}" href="{% url 'ui:validated' %}">
-        <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Validated records</a>
-      <a class="nav-link {% if nav == 'quarantine' %}active{% endif %}" href="{% url 'ui:quarantine' %}">
-        <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.6v.2"/></svg>Quarantine</a>
-    </nav>
-    <div class="sidebar-foot">Local · SQLite · no network<br>Same engine as <code>src.cli</code></div>
-  </aside>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="scrim" id="navScrim" aria-hidden="true"></div>
 
-  <div class="main">
-    <header class="topbar">
-      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Toggle navigation">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+<aside class="sidebar" id="sidebar" aria-label="Primary">
+  <a class="brand" href="{% url 'ui:dashboard' %}">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 17.5 9 7l4.4 9 2.8-5.5H20"/></svg>
+    </span>
+    <span class="brand-text">RefPipe<span class="brand-sub">Reference console</span></span>
+  </a>
+
+  <nav class="side-nav" aria-label="Main">
+    <div class="nav-group">
+      <span class="nav-group-label">Operate</span>
+      <a class="nav-item {% if nav == 'dashboard' %}active{% endif %}" href="{% url 'ui:dashboard' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+        Dashboard</a>
+      <a class="nav-item {% if nav == 'new_run' %}active{% endif %}" href="{% url 'ui:run_new' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>
+        New run</a>
+      <a class="nav-item {% if nav == 'runs' %}active{% endif %}" href="{% url 'ui:run_list' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6h12M8.5 12h12M8.5 18h12"/><circle cx="4" cy="6" r="1.3"/><circle cx="4" cy="12" r="1.3"/><circle cx="4" cy="18" r="1.3"/></svg>
+        Runs</a>
+      <a class="nav-item {% if nav == 'compare' %}active{% endif %}" href="{% url 'ui:compare' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3.5 4.5 7 8 10.5M4.5 7H16M16 13.5 19.5 17 16 20.5M19.5 17H8"/></svg>
+        Compare</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Reference</span>
+      <a class="nav-item {% if nav == 'reference' %}active{% endif %}" href="{% url 'ui:reference_list' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 20 8v8l-8 4.5L4 16V8z"/><path d="M12 12.5 20 8M12 12.5 4 8M12 12.5v8"/></svg>
+        Versions</a>
+      <a class="nav-item {% if nav == 'entities' %}active{% endif %}" href="{% url 'ui:entities' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.2"/><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M10.5 9.5 7 14.5M13.5 9.5 17 14.5M8.7 17h6.6"/></svg>
+        Entities</a>
+    </div>
+    <div class="nav-group">
+      <span class="nav-group-label">Data</span>
+      <a class="nav-item {% if nav == 'validated' %}active{% endif %}" href="{% url 'ui:validated' %}" title="Validated records">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>
+        Validated</a>
+      <a class="nav-item {% if nav == 'quarantine' %}active{% endif %}" href="{% url 'ui:quarantine' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v6c0 4.4-3 7.6-7 8.5-4-.9-7-4.1-7-8.5V6z"/><path d="M12 8.5v4M12 15.4v.2"/></svg>
+        Quarantine</a>
+    </div>
+  </nav>
+
+  <div class="side-foot">
+    <div class="engine-card">
+      <span class="engine-dot" aria-hidden="true"></span>
+      <span>Local engine<em>SQLite · UTC · append-only</em></span>
+    </div>
+    <div class="side-foot-row">
+      <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Switch color theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3 19 19M19 5l-1.7 1.7M6.7 17.3 5 19"/></svg>
       </button>
-      <div class="crumbs">{% block crumbs %}<span>Reference-Code Pipeline</span>{% endblock %}</div>
-      <div class="topbar-actions">{% block actions %}{% endblock %}</div>
-    </header>
+      <a class="btn btn-volt btn-sm" style="flex:1" href="{% url 'ui:run_new' %}">+ New run</a>
+    </div>
+  </div>
+</aside>
+
+<div class="shell">
+  <header class="header" id="header">
+    <button class="icon-btn nav-burger" id="navToggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="crumbs">{% block crumbs %}<strong>Reference-Code Pipeline</strong>{% endblock %}</div>
+    <div class="header-tools">
+      <svg class="progress-ring" viewBox="0 0 36 36" aria-hidden="true">
+        <circle class="ring-track" cx="18" cy="18" r="15.9155" pathLength="100"></circle>
+        <circle class="ring-fill" cx="18" cy="18" r="15.9155" pathLength="100"></circle>
+      </svg>
+      <button class="palette-btn" id="paletteOpen" type="button" aria-label="Open command palette">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <span>Search</span><kbd>Ctrl K</kbd>
+      </button>
+    </div>
+  </header>
+
+  <main class="content" id="main-content">
+    <div class="subbar"><div class="subbar-actions">{% block actions %}{% endblock %}</div></div>
 
     {% if messages %}
-    <div class="messages" role="status">
+    <div class="messages" role="status" aria-live="polite">
       {% for message in messages %}
       <div class="flash flash-{{ message.tags|default:'info' }}">
         <span>{{ message }}</span>
@@ -62,12 +113,25 @@
     </div>
     {% endif %}
 
-    <main class="content">
-      {% block content %}{% endblock %}
-    </main>
-    <footer class="foot">Reference-Code Validation Pipeline · web console · outputs in <code>output/</code></footer>
-  </div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <span><span class="foot-dot">●</span> RefPipe · reference-code validation pipeline · outputs in <code>output/</code></span>
+    <span>Local workspace · SQLite · UTC</span>
+  </footer>
 </div>
+
+<dialog class="palette" id="palette" aria-label="Command palette">
+  <div class="palette-head">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    <input id="paletteInput" type="text" placeholder="Jump to a page or action…" autocomplete="off" spellcheck="false" aria-label="Search pages and actions">
+    <kbd>Esc</kbd>
+  </div>
+  <ul class="palette-list" id="paletteList" role="listbox" aria-label="Commands"></ul>
+  <div class="palette-foot"><span>↑↓ navigate</span><span>Enter open</span><span>Esc close</span></div>
+</dialog>
+
 <script src="{% static 'ui/js/app.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>

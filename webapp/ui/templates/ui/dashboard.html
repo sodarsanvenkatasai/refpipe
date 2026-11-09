@@ -10,12 +10,22 @@
 {% endblock %}
 
 {% block content %}
-{% if data.totals.runs == 0 %}
-<section class="hero-empty card">
-  <div class="hero-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="44" height="44"><path d="M4 6h16M4 12h10M4 18h13" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Workspace overview</div>
+    <h1>Dashboard</h1>
+    <p class="page-desc">Validate incoming records against immutable reference snapshots — with quarantine, reconciliation and idempotent reruns.</p>
   </div>
-  <h1>Welcome to your validation console</h1>
+  <div class="page-meta">
+    <span class="chip mono">SQLite</span>
+    <span class="chip">one version per run</span>
+  </div>
+</div>
+
+{% if data.totals.runs == 0 %}
+<section class="hero-empty hero-dark card">
+  <div class="hero-icon"><span class="hero-mark" aria-hidden="true">R</span></div>
+  <h2>Welcome to your validation console</h2>
   <p>Validate incoming CSV records against versioned reference codes — with quarantine,
      reconciliation and idempotent reruns. Everything runs locally on SQLite.</p>
   <div class="hero-actions">
@@ -27,28 +37,75 @@
   <p class="muted small">The sample covers every rejection category and loads its own reference snapshot (<code>sample_v1</code>).</p>
 </section>
 {% else %}
+
+<section class="dashboard-band">
+  <div class="band-copy">
+    <div class="eyebrow">Workspace health</div>
+    <h2>Reference integrity, at a glance.</h2>
+    <p>{% if data.recent %}Last run <span class="mono">{{ data.recent.0.run_id }}</span> · {{ data.recent.0.status|lower }} · reference {{ data.recent.0.reference_version }} · {{ data.recent.0.started_at|dt }}{% else %}No completed runs yet.{% endif %}</p>
+    <div class="band-links">
+      <a class="btn btn-primary btn-sm" href="{% url 'ui:run_new' %}">+ New run</a>
+      <a class="btn btn-sm" href="{% url 'ui:quarantine' %}">Review quarantine</a>
+      <a class="btn btn-sm" href="{% url 'ui:reference_list' %}">Reference versions</a>
+    </div>
+  </div>
+  <div class="band-stats">
+    <div class="band-stat">
+      <span>Run success</span>
+      <strong>{{ data.totals.success_pct }}%</strong>
+      <em>{{ data.totals.success|default:0 }} of {{ data.totals.runs }} runs</em>
+    </div>
+    <div class="band-stat">
+      <span>Valid share</span>
+      <strong>{{ data.totals.valid_pct }}%</strong>
+      <em>{{ data.totals.input_rows|comma }} rows processed</em>
+    </div>
+    <div class="band-stat">
+      <span>Open rejects</span>
+      <strong>{{ data.totals.quarantined|comma }}</strong>
+      <em>append-only quarantine</em>
+    </div>
+  </div>
+</section>
+
 <section class="kpi-grid">
   <div class="card kpi">
-    <div class="kpi-label">Pipeline runs</div>
+    <div class="kpi-top">
+      <div class="kpi-label">Pipeline runs</div>
+      <span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13"/></svg></span>
+    </div>
     <div class="kpi-value">{{ data.totals.runs|comma }}</div>
     <div class="kpi-sub"><span class="dot dot-green"></span>{{ data.totals.success|default:0 }} success
       <span class="dot dot-red"></span>{{ data.totals.failed|default:0 }} failed
       {% if data.totals.running %}<span class="dot dot-amber"></span>{{ data.totals.running }} running{% endif %}</div>
+    {% spark_svg 'runs' %}
   </div>
-  <div class="card kpi">
-    <div class="kpi-label">Validated records (target)</div>
+  <div class="card kpi kpi-success">
+    <div class="kpi-top">
+      <div class="kpi-label">Validated records (target)</div>
+      <span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+    </div>
     <div class="kpi-value">{{ data.totals.validated_records|comma }}</div>
     <div class="kpi-sub">current state · one row per record_id</div>
+    {% spark_svg 'valid' %}
   </div>
-  <div class="card kpi">
-    <div class="kpi-label">Quarantined rejects</div>
+  <div class="card kpi kpi-danger">
+    <div class="kpi-top">
+      <div class="kpi-label">Quarantined rejects</div>
+      <span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.6v.2"/></svg></span>
+    </div>
     <div class="kpi-value">{{ data.totals.quarantined|comma }}</div>
     <div class="kpi-sub">append-only · raw payload kept</div>
+    {% spark_svg 'rejected' %}
   </div>
-  <div class="card kpi">
-    <div class="kpi-label">Reference versions</div>
+  <div class="card kpi kpi-accent">
+    <div class="kpi-top">
+      <div class="kpi-label">Reference versions</div>
+      <span class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5zM8 8h8M8 12h6"/></svg></span>
+    </div>
     <div class="kpi-value">{{ data.totals.versions|comma }}</div>
     <div class="kpi-sub">{{ data.totals.entities|comma }} entity ids loaded</div>
+    {% spark_svg 'versions' %}
   </div>
 </section>
 

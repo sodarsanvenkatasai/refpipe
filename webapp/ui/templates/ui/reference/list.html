@@ -4,10 +4,22 @@
 {% block crumbs %}<span>Reference data</span><span class="crumb-sep">/</span><strong>Versions</strong>{% endblock %}
 {% block actions %}<a class="btn btn-primary" href="{% url 'ui:reference_load' %}">+ Load version</a>{% endblock %}
 {% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Reference data</div>
+    <h1>Reference snapshots</h1>
+    <p class="page-desc">Immutable, checksummed reference data. Every run is validated against exactly one snapshot, so historical results always stay reproducible.</p>
+  </div>
+  <div class="page-meta">
+    <span class="chip">{{ versions|length }} version{{ versions|length|pluralize }}</span>
+    <span class="chip mono">immutable</span>
+  </div>
+</div>
+
 <section class="card">
   <div class="card-head">
-    <h1 class="card-title">Reference snapshots</h1>
-    <span class="muted small">Immutable · checksummed · one version per run</span>
+    <h2 class="card-title">All versions <span class="muted small">one snapshot per run</span></h2>
+    <span class="muted small">Windows are inclusive · blank effective_to = open-ended</span>
   </div>
   <div class="table-wrap">
   <table class="table">

@@ -4,13 +4,17 @@
 {% block crumbs %}<span>Reference data</span><span class="crumb-sep">/</span><strong>Entities</strong>{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Parent entities</h1>
-  <p class="muted">Entity ids power the opt-in <code>ORPHAN_ENTITY</code> check. Ids are merged on load;
-     enable the check per run (upload an entities CSV or tick “check entities”).</p>
+  <div>
+    <div class="eyebrow">Reference data · parent ids</div>
+    <h1>Parent entities</h1>
+    <p class="page-desc">Entity ids power the opt-in <code>ORPHAN_ENTITY</code> check. Ids are merged on load;
+       enable the check per run (upload an entities CSV or tick &ldquo;check entities&rdquo;).</p>
+  </div>
+  <div class="page-meta"><span class="chip mono">merged on load</span></div>
 </div>
 <div class="grid-2">
   <section class="card form-card">
-    <h2 class="card-title">Load entities CSV</h2>
+    <div class="card-head"><h2 class="card-title">Load entities CSV</h2></div>
     <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
       {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors }}</div>{% endif %}
@@ -19,17 +23,20 @@
     </form>
   </section>
   <section class="card">
-    <div class="card-head"><h2 class="card-title">Loaded ids <span class="muted small">{{ count|comma }} total</span></h2></div>
+    <div class="card-head">
+      <h2 class="card-title">Loaded ids <span class="muted small">{{ count|comma }} total</span></h2>
+    </div>
     <form method="get" class="filters">
-      <input type="search" name="q" value="{{ q }}" placeholder="Search entity id…" class="input">
+      <input type="search" name="q" value="{{ q }}" placeholder="Search entity id…" class="input" aria-label="Search entity id">
       <button class="btn btn-ghost" type="submit">Search</button>
+      {% if q %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:entities' %}">Clear</a>{% endif %}
     </form>
     <div class="table-wrap table-scroll">
     <table class="table">
       <thead><tr><th>Entity id</th><th>Loaded</th></tr></thead>
       <tbody>
       {% for e in page_obj.rows %}
-        <tr><td class="mono">{{ e.entity_id }}</td><td class="muted">{{ e.loaded_at|dt }}</td></tr>
+        <tr><td class="mono">{{ e.entity_id }}</td><td class="muted small">{{ e.loaded_at|dt }}</td></tr>
       {% empty %}<tr><td colspan="2" class="empty-cell">No entities loaded yet.</td></tr>{% endfor %}
       </tbody>
     </table>

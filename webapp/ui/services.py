@@ -329,6 +329,7 @@ def dashboard_data() -> dict:
         trend.reverse()
     total_rows = totals["valid_rows"] + totals["rejected_rows"]
     totals["valid_pct"] = round(100 * totals["valid_rows"] / total_rows, 1) if total_rows else 0
+    totals["success_pct"] = round(100 * (totals["success"] or 0) / totals["runs"], 1) if totals["runs"] else 0
     max_reason = max((r["n"] for r in reasons), default=0)
     for r in reasons:
         r["pct"] = round(100 * r["n"] / max_reason, 1) if max_reason else 0

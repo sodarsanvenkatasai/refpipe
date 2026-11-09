@@ -1,0 +1,6 @@
+product_code,description,status,effective_from,effective_to
+PROD_SAVINGS,Standard Savings Account,ACTIVE,2024-01-01,2026-12-31
+PROD_CHECKING,Basic Checking Account,ACTIVE,2024-01-01,2026-12-31
+PROD_LEGACY,Old Saver Tier 1,DEPRECATED,2023-01-01,2024-12-31
+PROD_LOAN_OLD,Archived Personal Loan,INACTIVE,2020-01-01,2023-12-31
+

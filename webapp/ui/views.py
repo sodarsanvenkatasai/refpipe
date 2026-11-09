@@ -189,6 +189,22 @@ def run_download(request, run_id: str, filename: str):
     return FileResponse(open(path, "rb"), as_attachment=True, filename=f"{run_id}_{filename}")
 
 
+def sample_download(request, filename: str):
+    allowed = {
+        "incoming_records.csv": Path(settings.BASE_DIR) / "data" / "sample" / "incoming_records.csv",
+        "reference_codes_v1.csv": Path(settings.BASE_DIR) / "data" / "sample" / "reference_codes_v1.csv",
+        "reference_codes_v2.csv": Path(settings.BASE_DIR) / "data" / "sample" / "reference_codes_v2.csv",
+        "entities.csv": Path(settings.BASE_DIR) / "data" / "sample" / "entities.csv",
+        "test_incoming_records.csv": Path(settings.BASE_DIR) / "data" / "test_sample" / "test_incoming_records.csv",
+        "test_reference_v1.csv": Path(settings.BASE_DIR) / "data" / "test_sample" / "test_reference_v1.csv",
+        "test_entities.csv": Path(settings.BASE_DIR) / "data" / "test_sample" / "test_entities.csv",
+    }
+    path = allowed.get(filename)
+    if not path or not path.exists():
+        raise Http404("Sample file not found")
+    return FileResponse(open(path, "rb"), as_attachment=True, filename=filename)
+
+
 def compare_view(request):
     form = CompareForm(request.GET or None)
     result = error = None

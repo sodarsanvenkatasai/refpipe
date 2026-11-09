@@ -3,13 +3,18 @@
 {% block title %}Validated records{% endblock %}
 {% block crumbs %}<span>Data</span><span class="crumb-sep">/</span><strong>Validated records</strong>{% endblock %}
 {% block content %}
-<section class="card">
-  <div class="card-head">
-    <h1 class="card-title">Target table <span class="muted small">{{ page_obj.total|comma }} records · current state · idempotent upsert on record_id</span></h1>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Data · published rows</div>
+    <h1>Target table</h1>
+    <p class="page-desc">{{ page_obj.total|comma }} records &middot; current state &middot; idempotent upsert on <code>record_id</code>.</p>
   </div>
+  <div class="page-meta"><span class="chip mono">upsert on record_id</span></div>
+</div>
+<section class="card">
   <form method="get" class="filters">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search record / code / entity…" class="input">
-    <select name="version" class="input">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record / code / entity…" class="input" aria-label="Search records">
+    <select name="version" class="input" aria-label="Reference version">
       <option value="">All versions</option>
       {% for v, label in versions %}<option value="{{ v }}" {% if v == version %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
@@ -26,7 +31,7 @@
         <td class="mono"><strong>{{ r.record_id }}</strong></td>
         <td class="mono">{{ r.entity_id|default:"—" }}</td>
         <td class="mono">{{ r.product_code }}</td>
-        <td class="mono">{{ r.event_date }}</td>
+        <td class="mono small">{{ r.event_date }}</td>
         <td class="num mono">{{ r.amount|default:"—" }}</td>
         <td><span class="chip mono">{{ r.reference_version }}</span></td>
         <td>{% if r.is_deprecated_code %}<span class="badge badge-amber">deprecated</span>{% else %}<span class="muted">—</span>{% endif %}</td>

@@ -4,9 +4,15 @@
 {% block crumbs %}<span>Pipeline</span><span class="crumb-sep">/</span><strong>New run</strong>{% endblock %}
 {% block content %}
 <div class="page-head">
-  <h1>Start a validation run</h1>
-  <p class="muted">Upload incoming records and choose exactly one reference version.
-     The run is processed in the background — you can watch it live on the run page.</p>
+  <div>
+    <div class="eyebrow">Pipeline · new execution</div>
+    <h1>Start a validation run</h1>
+    <p class="page-desc">Upload incoming records and choose exactly one reference version. The run is processed in the background — you can watch it live on the run page.</p>
+  </div>
+  <div class="page-meta">
+    <span class="chip">one version per run</span>
+    <span class="chip mono">immutable snapshots</span>
+  </div>
 </div>
 
 <form method="post" enctype="multipart/form-data" class="run-form" id="runForm" novalidate>
@@ -15,51 +21,75 @@
     <div class="flash flash-error">{{ form.non_field_errors }}</div>
   {% endif %}
 
-  <div class="form-grid">
-    <section class="card form-card">
-      <h2 class="card-title"><span class="step">1</span> Input data</h2>
-      {% include "ui/partials/field.html" with field=form.input_file %}
-      <div class="field-row">
-        {% include "ui/partials/field.html" with field=form.entities_file %}
-        <div class="field field-check">
-          <label class="check">{{ form.check_entities }} <span>Check entities (already loaded)</span></label>
-          {% if form.check_entities.errors %}<div class="field-errors">{{ form.check_entities.errors }}</div>{% endif %}
+  <div class="form-layout">
+    <div class="form-grid">
+      <section class="card form-card">
+        <h2 class="card-title"><span class="step">1</span> Input data</h2>
+        {% include "ui/partials/field.html" with field=form.input_file %}
+        <div class="field-row">
+          {% include "ui/partials/field.html" with field=form.entities_file %}
+          <div class="field field-check">
+            <label class="check">{{ form.check_entities }} <span>Check entities (already loaded)</span></label>
+            {% if form.check_entities.errors %}<div class="field-errors">{{ form.check_entities.errors }}</div>{% endif %}
+            <div class="help">Enables the <code>ORPHAN_ENTITY</code> rule for this run.</div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card form-card">
-      <h2 class="card-title"><span class="step">2</span> Reference version</h2>
-      {% include "ui/partials/field.html" with field=form.reference_version %}
-      <div class="divider-label">or load a new immutable snapshot</div>
-      <div class="field-row">
-        {% include "ui/partials/field.html" with field=form.new_reference_version %}
-        {% include "ui/partials/field.html" with field=form.new_reference_file %}
-      </div>
-    </section>
+      <section class="card form-card">
+        <h2 class="card-title"><span class="step">2</span> Choose a version</h2>
+        {% include "ui/partials/field.html" with field=form.reference_version %}
+        <div class="divider-label">or load a new immutable snapshot</div>
+        <div class="field-row">
+          {% include "ui/partials/field.html" with field=form.new_reference_version %}
+          {% include "ui/partials/field.html" with field=form.new_reference_file %}
+        </div>
+      </section>
 
-    <section class="card form-card">
-      <h2 class="card-title"><span class="step">3</span> Options</h2>
-      {% include "ui/partials/field.html" with field=form.deprecated_policy %}
-      <div class="field field-check">
-        <label class="check">{{ form.strict_columns }} <span>Strict columns</span></label>
-        <div class="help">Unexpected extra columns fail the whole batch (default: warn and ignore).</div>
-      </div>
-      <div class="field-row">
-        {% include "ui/partials/field.html" with field=form.event_from %}
-        {% include "ui/partials/field.html" with field=form.event_to %}
-      </div>
-      {% include "ui/partials/field.html" with field=form.run_id %}
-    </section>
-  </div>
+      <section class="card form-card">
+        <h2 class="card-title"><span class="step">3</span> Options</h2>
+        {% include "ui/partials/field.html" with field=form.deprecated_policy %}
+        <div class="field field-check">
+          <label class="check">{{ form.strict_columns }} <span>Strict columns</span></label>
+          <div class="help">Unexpected extra columns fail the whole batch (default: warn and ignore).</div>
+        </div>
+        <div class="field-row">
+          {% include "ui/partials/field.html" with field=form.event_from %}
+          {% include "ui/partials/field.html" with field=form.event_to %}
+        </div>
+        {% include "ui/partials/field.html" with field=form.run_id %}
+      </section>
 
-  <div class="form-actions">
-    <button class="btn btn-primary btn-lg" type="submit" id="runSubmit">
-      <span class="btn-label">Validate &amp; publish</span>
-      <span class="spinner" hidden></span>
-    </button>
-    <a class="btn btn-ghost btn-lg" href="{% url 'ui:dashboard' %}">Cancel</a>
-    <span class="muted small">Accounting invariant: input = valid + rejected · publish is one transaction.</span>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-lg" type="submit" id="runSubmit">
+          <span class="btn-label">Validate &amp; publish</span>
+          <span class="spinner" hidden></span>
+        </button>
+        <a class="btn btn-ghost btn-lg" href="{% url 'ui:dashboard' %}">Cancel</a>
+        <span class="muted small">Accounting invariant: input = valid + rejected · publish is one transaction.</span>
+      </div>
+    </div>
+
+    <aside class="aside-stack" aria-label="Run guidance">
+      <section class="card guide-card">
+        <h2 class="guide-title">What happens when you run</h2>
+        <ol class="guide-steps">
+          <li><strong>Ingest</strong>CSV is read raw; column names are checked before any row is processed.</li>
+          <li><strong>Validate</strong>First failure wins: format → id → code → status → effective date → entity.</li>
+          <li><strong>Quarantine</strong>Rejected rows keep their raw payload, reason and source position.</li>
+          <li><strong>Publish</strong>Valid rows are upserted on <code>record_id</code> in a single transaction.</li>
+          <li><strong>Reconcile</strong>Counts are verified before the run is marked successful.</li>
+        </ol>
+        <div class="guide-foot">A failed publish rolls back completely — rerunning with the same input is always safe.</div>
+      </section>
+      <section class="card guide-card">
+        <h2 class="guide-title">Before you start</h2>
+        <div class="guide-foot guide-foot-plain">
+          Reference versions are immutable: the same name with different content is refused.
+          Pick an existing version, or provide a new one together with its CSV.
+        </div>
+      </section>
+    </aside>
   </div>
 </form>
 {% endblock %}

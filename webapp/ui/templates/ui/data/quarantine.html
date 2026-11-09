@@ -3,13 +3,18 @@
 {% block title %}Quarantine{% endblock %}
 {% block crumbs %}<span>Data</span><span class="crumb-sep">/</span><strong>Quarantine</strong>{% endblock %}
 {% block content %}
-<section class="card">
-  <div class="card-head">
-    <h1 class="card-title">Rejected records <span class="muted small">{{ page_obj.total|comma }} rows · append-only · raw payload preserved</span></h1>
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Data · rejected rows</div>
+    <h1>Rejected records</h1>
+    <p class="page-desc">{{ page_obj.total|comma }} rows &middot; append-only &middot; raw payload preserved for replay.</p>
   </div>
+  <div class="page-meta"><span class="chip mono">append-only</span></div>
+</div>
+<section class="card">
   <form method="get" class="filters">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search record id, payload or run…" class="input">
-    <input type="search" name="run_id" value="{{ run_id }}" placeholder="Run id" class="input input-sm">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search record id, payload or run…" class="input" aria-label="Search rejected records">
+    <input type="search" name="run_id" value="{{ run_id }}" placeholder="Run id" class="input input-sm" aria-label="Run id">
     <button class="btn btn-ghost" type="submit">Filter</button>
     {% if q or reason or run_id %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:quarantine' %}">Clear</a>{% endif %}
   </form>

@@ -4,23 +4,34 @@
 {% block crumbs %}<a href="{% url 'ui:reference_list' %}">Versions</a><span class="crumb-sep">/</span><strong class="mono">{{ meta.reference_version }}</strong>{% endblock %}
 {% block actions %}<a class="btn btn-ghost" href="{% url 'ui:reference_download' meta.reference_version %}">Download CSV</a> <a class="btn btn-primary" href="{% url 'ui:run_new' %}">+ Run against this</a>{% endblock %}
 {% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Reference data · snapshot</div>
+    <h1>Version <span class="mono">{{ meta.reference_version }}</span></h1>
+    <p class="page-desc">Loaded {{ meta.loaded_at|dt }} · immutable snapshot · {{ meta.row_count|comma }} reference codes with inclusive effective windows.</p>
+  </div>
+  <div class="page-meta">
+    <span class="chip mono" title="{{ meta.checksum }}">{{ meta.checksum|truncatechars:18 }}</span>
+  </div>
+</div>
+
 <section class="kpi-grid">
-  <div class="card kpi"><div class="kpi-label">Version</div><div class="kpi-value mono">{{ meta.reference_version }}</div><div class="kpi-sub">loaded {{ meta.loaded_at|dt }}</div></div>
-  <div class="card kpi"><div class="kpi-label">Reference codes</div><div class="kpi-value">{{ meta.row_count|comma }}</div><div class="kpi-sub">windows, inclusive bounds</div></div>
-  <div class="card kpi"><div class="kpi-label">Checksum</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.checksum }}">{{ meta.checksum|truncatechars:18 }}</div><div class="kpi-sub">immutable snapshot</div></div>
-  <div class="card kpi"><div class="kpi-label">Source</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.source_file }}">{{ meta.source_file|truncatechars:24 }}</div><div class="kpi-sub">blank effective_to = open-ended</div></div>
+  <div class="card kpi"><div class="kpi-label">Version</div><div class="kpi-value mono kpi-value-sm">{{ meta.reference_version }}</div><div class="kpi-sub">loaded {{ meta.loaded_at|dt }}</div></div>
+  <div class="card kpi kpi-accent"><div class="kpi-label">Reference codes</div><div class="kpi-value">{{ meta.row_count|comma }}</div><div class="kpi-sub">windows, inclusive bounds</div></div>
+  <div class="card kpi kpi-info"><div class="kpi-label">Checksum</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.checksum }}">{{ meta.checksum|truncatechars:18 }}</div><div class="kpi-sub">immutable snapshot</div></div>
+  <div class="card kpi kpi-success"><div class="kpi-label">Source</div><div class="kpi-value kpi-value-sm mono" title="{{ meta.source_file }}">{{ meta.source_file|truncatechars:24 }}</div><div class="kpi-sub">blank effective_to = open-ended</div></div>
 </section>
 
 <section class="card">
   <div class="card-head"><h2 class="card-title">Codes in this version</h2></div>
-  <form method="get" class="filters">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search code or description…" class="input">
-    <select name="status" class="input">
+  <form method="get" class="filters" role="search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search code or description…" class="input" aria-label="Search codes">
+    <select name="status" class="input" aria-label="Filter by status">
       <option value="">All statuses</option>
       {% for s in statuses %}<option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>{% endfor %}
     </select>
-    <button class="btn btn-ghost" type="submit">Filter</button>
-    {% if q or status %}<a class="btn btn-sm btn-ghost" href="{% url 'ui:reference_detail' meta.reference_version %}">Clear</a>{% endif %}
+    <button class="btn btn-ghost" type="submit">Apply filters</button>
+    {% if q or status %}<a class="btn btn-ghost" href="{% url 'ui:reference_detail' meta.reference_version %}">Clear</a>{% endif %}
   </form>
   <div class="table-wrap">
   <table class="table">
